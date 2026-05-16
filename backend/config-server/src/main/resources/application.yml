@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        native:
+          # Konfiguracje serwisów przechowywane lokalnie w classpath
+          search-locations: classpath:/config/
+  profiles:
+    active: native   # "native" = lokalny filesystem; zmień na "git" dla repo Git
+
+config:
+  security:
+    username: ${CONFIG_USERNAME:configuser}
+    password: ${CONFIG_PASSWORD:configsecret}
+
+server:
+  port: 8888
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_USERNAME:eureka}:${EUREKA_PASSWORD:secret}@${EUREKA_HOST:localhost}:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, refresh
+  endpoint:
+    health:
+      show-details: always

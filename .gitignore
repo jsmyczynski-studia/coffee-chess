@@ -1,24 +1,105 @@
-# Compiled class file
+# Compiled Java / JVM files
 *.class
-
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
 *.jar
 *.war
-*.nar
 *.ear
-*.zip
-*.tar.gz
-*.rar
+*.nar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+dependency-reduced-pom.xml
+
+# Gradle, gdyby kiedyś się pojawił
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Logs
+*.log
+logs/
+log/
+
+# Runtime / crash files
 hs_err_pid*
 replay_pid*
+*.pid
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Docker / local runtime data
+docker-compose.override.yml
+*.local.yml
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# IDE - Eclipse / STS
+.project
+.classpath
+.settings/
+.springBeans
+.sts4-cache/
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.example.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Package / archive files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Test / coverage reports
+coverage/
+htmlcov/
+*.exec
+jacoco.exec
+target/site/jacoco/
+
+# Spring Boot generated files
+spring.log
+
+# Node / frontend, jeśli dodasz frontend
+node_modules/
+dist/
+.next/
+.nuxt/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Database dumps / backups
+*.sql.gz
+*.dump
+*.backup
+*.bak
+
+# Local generated copied artifacts
+*-app.jar
+user-service-app.jar
+analysis-service-app.jar
