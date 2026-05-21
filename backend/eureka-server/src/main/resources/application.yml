@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: eureka-server
+  security:
+    user:
+      name: ${EUREKA_USERNAME:eureka}
+      password: ${EUREKA_PASSWORD:secret}
+
+server:
+  port: 8761
+
+eureka:
+  security:
+    username: ${EUREKA_USERNAME:eureka}
+    password: ${EUREKA_PASSWORD:secret}
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+    prefer-ip-address: false
+  client:
+    register-with-eureka: false   # sam siebie nie rejestruje
+    fetch-registry: false         # nie pobiera rejestru od siebie
+    service-url:
+      defaultZone: http://${eureka.security.username}:${eureka.security.password}@${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    wait-time-in-ms-when-sync-empty: 0           # szybszy start w dev
+    enable-self-preservation: false              # wyłączone w dev, włącz na prod!
+    eviction-interval-timer-in-ms: 5000          # co 5s usuwa martwe instancje
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.netflix.eureka: WARN
+    com.netflix.discovery: WARN

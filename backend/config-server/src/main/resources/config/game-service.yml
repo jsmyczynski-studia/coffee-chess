@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_GAME_HOST:localhost}:5432/gamedb
+    username: ${DB_USER:coffeechess}
+    password: ${DB_PASSWORD:secret}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:localhost}:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/coffee-chess
+
+server:
+  port: 8082
+
+chess:
+  api:
+    url: ${CHESS_API_URL:https://chess-api.com/v1}
+    timeout-seconds: 10

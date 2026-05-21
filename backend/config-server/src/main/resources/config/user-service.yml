@@ -1,0 +1,42 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_USER_HOST:localhost}:5432/userdb
+    username: ${DB_USER:coffeechess}
+    password: ${DB_PASSWORD:secret}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:localhost}:9092
+    consumer:
+      group-id: user-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "pl.coffeechess.*"
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/coffee-chess
+
+server:
+  port: 8081
+
+elo:
+  starting-rating: 1200
+  k-factor:
+    beginner: 32    # < 2100 ELO
+    advanced: 24    # 2100–2399 ELO
+    expert: 16      # >= 2400 ELO
