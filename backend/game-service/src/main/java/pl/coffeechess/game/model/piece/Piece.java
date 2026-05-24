@@ -15,6 +15,8 @@ public abstract class Piece {
 
     public abstract boolean canMove(int sourceRow, int sourceColumn, int targetRow, int targetColumn, boolean targetOccupied);
 
+    public abstract char getFenChar();
+
     public boolean requiresClearPath() {
         return false;
     }

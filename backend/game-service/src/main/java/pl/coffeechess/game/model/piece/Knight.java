@@ -21,4 +21,9 @@ public class Knight extends Piece {
         return (rowDelta == 2 && columnDelta == 1)
                 || (rowDelta == 1 && columnDelta == 2);
     }
+
+    @Override
+    public char getFenChar() {
+        return isWhite() ? 'N' : 'n';
+    }
 }

@@ -1,9 +1,9 @@
-package pl.coffeechess.game_service.kafka;
+package pl.coffeechess.game.kafka;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
-import pl.coffeechess.game_service.model.entity.Game;
+import pl.coffeechess.game.model.entity.Game;
 
 @Component
 @RequiredArgsConstructor
@@ -14,10 +14,11 @@ public class GameCompletedProducer {
 
     public void publishGameCompletedEvent(Game game) {
         String outcome = switch (game.getStatus()) {
-            case WHITE_WON -> "WHITE_WON";
-            case BLACK_WON -> "BLACK_WON";
+            case WHITE_WINS -> "WHITE_WON";
+            case BLACK_WINS -> "BLACK_WON";
             case DRAW -> "DRAW";
-            default -> "UNKNOWN";
+            case ABORTED -> "ABORTED";
+            default -> throw new IllegalStateException("Unexpected value: " + game.getStatus());
         };
 
         GameCompletedEvent payload = new GameCompletedEvent(
@@ -25,7 +26,7 @@ public class GameCompletedProducer {
                 game.getWhitePlayerId().toString(),
                 game.getBlackPlayerId().toString(),
                 outcome,
-                game.getPgn()
+                game.getPgnMoves()
         );
 
         kafkaTemplate.send(TOPIC_NAME, game.getId().toString(), payload);
