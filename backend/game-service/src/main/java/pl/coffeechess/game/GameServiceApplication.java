@@ -1,4 +1,4 @@
-package pl.coffeechess.game_service;
+package pl.coffeechess.game;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class GameServiceApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(GameServiceApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(GameServiceApplication.class, args);
+    }
 }
