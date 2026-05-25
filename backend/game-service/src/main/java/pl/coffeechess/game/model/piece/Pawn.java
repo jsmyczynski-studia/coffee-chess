@@ -31,4 +31,9 @@ public class Pawn extends Piece {
 
         return Math.abs(columnDelta) == 1 && rowDelta == direction && targetOccupied;
     }
+
+    @Override
+    public char getFenChar() {
+        return isWhite() ? 'P' : 'p';
+    }
 }

@@ -24,4 +24,9 @@ public class Rook extends Piece {
     public boolean requiresClearPath() {
         return true;
     }
+
+    @Override
+    public char getFenChar() {
+        return isWhite() ? 'R' : 'r';
+    }
 }

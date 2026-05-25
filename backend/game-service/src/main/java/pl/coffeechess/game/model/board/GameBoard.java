@@ -1,6 +1,8 @@
 package pl.coffeechess.game.model.board;
 
+import lombok.Data;
 import pl.coffeechess.game.model.enums.Color;
+import pl.coffeechess.game.model.enums.PieceType;
 import pl.coffeechess.game.model.piece.Bishop;
 import pl.coffeechess.game.model.piece.King;
 import pl.coffeechess.game.model.piece.Knight;
@@ -11,11 +13,19 @@ import pl.coffeechess.game.model.piece.Rook;
 
 import java.util.Objects;
 
+@Data
 public class GameBoard {
 
     public static final int BOARD_SIZE = 8;
 
     private final Piece[][] squares;
+
+    private Color activeColor = Color.WHITE;
+
+    public GameBoard(String fen) {
+        this.squares = new Piece[BOARD_SIZE][BOARD_SIZE];
+        loadFromFen(fen);
+    }
 
     private GameBoard() {
         this.squares = new Piece[BOARD_SIZE][BOARD_SIZE];
@@ -136,5 +146,82 @@ public class GameBoard {
         int row = BOARD_SIZE - Character.getNumericValue(rank);
         int column = file - 'a';
         return new int[]{row, column};
+    }
+
+    public void undoMove(String from, String to, Piece capturedPiece) {
+        int[] source = parseSquare(from);
+        int[] target = parseSquare(to);
+
+        squares[source[0]][source[1]] = squares[target[0]][target[1]];
+        squares[target[0]][target[1]] = capturedPiece;
+    }
+
+    private void loadFromFen(String fen) {
+        String[] parts = fen.split(" ");
+        String[] piecesRows = parts[0].split("/");
+
+        for (int row = 0; row < piecesRows.length; row++) {
+            int col = 0;
+            for (char letter : piecesRows[row].toCharArray()) {
+                if (Character.isDigit(letter)) {
+                    col += Character.getNumericValue(letter);
+                } else {
+                    switch (letter) {
+                        case 'p' -> squares[row][col] = new Pawn(Color.BLACK);
+                        case 'P' -> squares[row][col] = new Pawn(Color.WHITE);
+                        case 'r' -> squares[row][col] = new Rook(Color.BLACK);
+                        case 'R' -> squares[row][col] = new Rook(Color.WHITE);
+                        case 'n' -> squares[row][col] = new Knight(Color.BLACK);
+                        case 'N' -> squares[row][col] = new Knight(Color.WHITE);
+                        case 'b' -> squares[row][col] = new Bishop(Color.BLACK);
+                        case 'B' -> squares[row][col] = new Bishop(Color.WHITE);
+                        case 'q' -> squares[row][col] = new Queen(Color.BLACK);
+                        case 'Q' -> squares[row][col] = new Queen(Color.WHITE);
+                        case 'k' -> squares[row][col] = new King(Color.BLACK);
+                        case 'K' -> squares[row][col] = new King(Color.WHITE);
+                    }
+                    col++;
+                }
+            }
+        }
+        this.activeColor = parts[1].equals("w") ? Color.WHITE : Color.BLACK;
+        //TODO en passant, roszady itp
+    }
+
+    public String toFen() {
+        StringBuilder sb = new StringBuilder();
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            int emptySquares = 0;
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                Piece piece = squares[row][col];
+                if (piece == null) {
+                    emptySquares++;
+                } else {
+                    if (emptySquares > 0) {
+                        sb.append(emptySquares);
+                        emptySquares = 0;
+                    }
+                    sb.append(piece.getFenChar());
+                }
+            }
+            if (emptySquares > 0) sb.append(emptySquares);
+            if (row < 7) sb.append("/");
+        }
+
+        sb.append(activeColor == Color.WHITE ? " w" : " b");
+        sb.append(" - - 0 1");
+        //TODO en passant, roszady itp
+        return sb.toString();
+    }
+
+    public void promotePiece(String square, PieceType promotionType, Color color) {
+        Piece promotedPiece = switch (promotionType) {
+            case QUEEN -> new Queen(color);
+            case ROOK -> new Rook(color);
+            case BISHOP -> new Bishop(color);
+            case KNIGHT -> new Knight(color);
+            default -> throw new IllegalArgumentException("unknown promotion type");
+        };
+        placePiece(square, promotedPiece);
     }
 }
