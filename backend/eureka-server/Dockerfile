@@ -23,4 +23,4 @@ COPY --from=builder /workspace/backend/eureka-server/target/eureka-server-*.jar 
 
 EXPOSE 8761
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

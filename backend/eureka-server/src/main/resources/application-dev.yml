@@ -1,0 +1,13 @@
+eureka:
+  server:
+    wait-time-in-ms-when-sync-empty: 0
+    enable-self-preservation: false
+
+management:
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    pl.coffeechess.eureka: DEBUG

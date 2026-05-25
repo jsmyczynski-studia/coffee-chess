@@ -7,13 +7,14 @@ services:
     ports:
       - "8761:8761"
     environment:
-      EUREKA_USERNAME: ${EUREKA_USERNAME}
-      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      EUREKA_USERNAME: ${EUREKA_USERNAME:-eureka}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eurekaSecret123}
       EUREKA_HOSTNAME: eureka-server
     networks:
       - coffee-chess-net
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8761/actuator/health/liveness"]
       interval: 15s
       timeout: 5s
       retries: 10
