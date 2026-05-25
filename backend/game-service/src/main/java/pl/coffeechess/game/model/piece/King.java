@@ -20,4 +20,9 @@ public class King extends Piece {
         int columnDelta = Math.abs(targetColumn - sourceColumn);
         return rowDelta <= 1 && columnDelta <= 1 && (rowDelta != 0 || columnDelta != 0);
     }
+
+    @Override
+    public char getFenChar() {
+        return isWhite() ? 'K' : 'k';
+    }
 }
