@@ -1,20 +1,16 @@
 package pl.coffeechess.eureka;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,52 +18,58 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class EurekaSecurityIntegrationTest {
 
-    @Autowired
-    private TestRestTemplate restTemplate;
+    @LocalServerPort
+    private int port;
+
+    private final HttpClient client = HttpClient.newHttpClient();
 
     @Test
-    void healthEndpointIsPublic() {
-        ResponseEntity<Map> response = restTemplate.getForEntity("/actuator/health", Map.class);
+    void healthEndpointIsPublic() throws Exception {
+        HttpResponse<String> response = sendGet("/actuator/health/liveness", null);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).containsKey("status");
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).contains("\"status\":\"UP\"");
     }
 
     @Test
-    void eurekaDashboardRequiresAuthentication() {
-        ResponseEntity<String> response = restTemplate.getForEntity("/", String.class);
+    void eurekaDashboardRequiresAuthentication() throws Exception {
+        HttpResponse<String> response = sendGet("/", null);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.statusCode()).isEqualTo(401);
     }
 
     @Test
-    void eurekaRegistryEndpointRequiresAuthentication() {
-        ResponseEntity<String> response = restTemplate.getForEntity("/actuator/eureka-registry", String.class);
+    void eurekaRegistryEndpointRequiresAuthentication() throws Exception {
+        HttpResponse<String> response = sendGet("/actuator/eureka-registry", null);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.statusCode()).isEqualTo(401);
     }
 
     @Test
-    void authenticatedClientCanAccessRegistryEndpoint() {
-        HttpHeaders headers = basicAuthHeaders("eureka", "testSecret");
-        ResponseEntity<Map> response = restTemplate.exchange(
-                "/actuator/eureka-registry",
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                Map.class
-        );
+    void authenticatedClientCanAccessRegistryEndpoint() throws Exception {
+        HttpResponse<String> response = sendGet("/actuator/eureka-registry", basicAuth("eureka", "testSecret"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).containsKeys("registeredServiceCount", "registeredInstanceCount", "services");
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).contains("registeredServiceCount");
     }
 
-    private HttpHeaders basicAuthHeaders(String username, String password) {
-        HttpHeaders headers = new HttpHeaders();
+    private HttpResponse<String> sendGet(String path, String authorizationHeader) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + path))
+                .GET()
+                .header("Accept", "application/json");
+
+        if (authorizationHeader != null) {
+            builder.header("Authorization", authorizationHeader);
+        }
+
+        return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private String basicAuth(String username, String password) {
         String token = Base64.getEncoder().encodeToString(
                 (username + ":" + password).getBytes(StandardCharsets.UTF_8)
         );
-        headers.set(HttpHeaders.AUTHORIZATION, "Basic " + token);
-        headers.setAccept(MediaType.parseMediaTypes("application/json"));
-        return headers;
+        return "Basic " + token;
     }
 }

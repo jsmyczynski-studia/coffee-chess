@@ -2,7 +2,6 @@ package pl.coffeechess.eureka.actuator;
 
 import com.netflix.appinfo.InstanceInfo;
 import com.netflix.eureka.registry.PeerAwareInstanceRegistry;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.stereotype.Component;
@@ -14,10 +13,13 @@ import java.util.Map;
 
 @Component
 @Endpoint(id = "eureka-registry")
-@RequiredArgsConstructor
 public class EurekaRegistryEndpoint {
 
     private final PeerAwareInstanceRegistry registry;
+
+    public EurekaRegistryEndpoint(PeerAwareInstanceRegistry registry) {
+        this.registry = registry;
+    }
 
     @ReadOperation
     public Map<String, Object> registry() {

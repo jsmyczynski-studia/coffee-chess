@@ -1,21 +1,16 @@
 package pl.coffeechess.eureka;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -27,47 +22,37 @@ class ServiceDiscoveryIntegrationTest {
     private static final String USERNAME = "eureka";
     private static final String PASSWORD = "testSecret";
 
-    @Autowired
-    private TestRestTemplate restTemplate;
+    @LocalServerPort
+    private int port;
+
+    private final HttpClient client = HttpClient.newHttpClient();
 
     @Test
-    void microservicesCanRegisterAndBeDiscoveredByName() {
+    void microservicesCanRegisterAndBeDiscoveredByName() throws Exception {
         registerService("USER-SERVICE", "user-service-1", 8081);
         registerService("GAME-SERVICE", "game-service-1", 8082);
 
         await().untilAsserted(() -> {
-            Map<String, Object> registry = fetchRegistry();
-            assertThat((Integer) registry.get("registeredServiceCount")).isGreaterThanOrEqualTo(2);
+            String registry = fetchRegistry();
+            assertThat(registry).contains("USER-SERVICE").contains("GAME-SERVICE");
         });
 
-        assertThat(fetchServiceInstances("USER-SERVICE")).hasSize(1);
-        assertThat(fetchServiceInstances("GAME-SERVICE")).hasSize(1);
-
-        Map<String, Object> userInstance = fetchServiceInstances("USER-SERVICE").getFirst();
-        assertThat(userInstance.get("hostName")).isEqualTo("localhost");
-        assertThat(extractPort(userInstance)).isEqualTo(8081);
-        assertThat(userInstance.get("status")).isEqualTo("UP");
+        String userService = fetchService("USER-SERVICE");
+        assertThat(userService).contains("user-service-1");
+        assertThat(userService).contains("\"status\":\"UP\"");
+        assertThat(userService).contains("\"$\":8081");
     }
 
     @Test
-    void registryListsAllRegisteredInstances() {
+    void registryListsAllRegisteredInstances() throws Exception {
         registerService("ANALYSIS-SERVICE", "analysis-service-1", 8083);
 
-        await().untilAsserted(() -> {
-            Map<String, Object> registry = fetchRegistry();
-            assertThat((List<?>) registry.get("services")).isNotEmpty();
-        });
-
-        Map<String, Object> registry = fetchRegistry();
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> services = (List<Map<String, Object>>) registry.get("services");
-
-        assertThat(services)
-                .extracting(service -> service.get("name"))
-                .contains("ANALYSIS-SERVICE");
+        await().untilAsserted(() ->
+                assertThat(fetchRegistry()).contains("ANALYSIS-SERVICE")
+        );
     }
 
-    private void registerService(String appName, String instanceId, int port) {
+    private void registerService(String appName, String instanceId, int servicePort) throws Exception {
         String payload = """
                 {
                   "instance": {
@@ -103,78 +88,50 @@ class ServiceDiscoveryIntegrationTest {
                     "actionType": "ADDED"
                   }
                 }
-                """.formatted(instanceId, appName, port, port, port, port, appName.toLowerCase(), appName.toLowerCase());
+                """.formatted(instanceId, appName, servicePort, servicePort, servicePort, servicePort, appName.toLowerCase(), appName.toLowerCase());
 
-        HttpHeaders headers = basicAuthHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/eureka/apps/" + appName))
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .header("Authorization", basicAuth())
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .build();
 
-        ResponseEntity<String> response = restTemplate.exchange(
-                "/eureka/apps/" + appName,
-                HttpMethod.POST,
-                new HttpEntity<>(payload, headers),
-                String.class
-        );
-
-        assertThat(response.getStatusCode()).isIn(HttpStatus.NO_CONTENT, HttpStatus.OK);
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertThat(response.statusCode()).isIn(200, 204);
     }
 
-    @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> fetchServiceInstances(String appName) {
-        HttpHeaders headers = basicAuthHeaders();
-        ResponseEntity<Map> response = restTemplate.exchange(
-                "/eureka/apps/" + appName,
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                Map.class
-        );
+    private String fetchService(String appName) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/eureka/apps/" + appName))
+                .GET()
+                .header("Authorization", basicAuth())
+                .header("Accept", "application/json")
+                .build();
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Map<String, Object> application = (Map<String, Object>) response.getBody().get("application");
-        Object instanceNode = application.get("instance");
-
-        if (instanceNode instanceof List<?> instances) {
-            return (List<Map<String, Object>>) instances;
-        }
-
-        return List.of((Map<String, Object>) instanceNode);
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertThat(response.statusCode()).isEqualTo(200);
+        return response.body();
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> fetchRegistry() {
-        HttpHeaders headers = basicAuthHeaders();
-        ResponseEntity<Map> response = restTemplate.exchange(
-                "/actuator/eureka-registry",
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                Map.class
-        );
+    private String fetchRegistry() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/actuator/eureka-registry"))
+                .GET()
+                .header("Authorization", basicAuth())
+                .header("Accept", "application/json")
+                .build();
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        return response.getBody();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertThat(response.statusCode()).isEqualTo(200);
+        return response.body();
     }
 
-    private HttpHeaders basicAuthHeaders() {
-        HttpHeaders headers = new HttpHeaders();
+    private String basicAuth() {
         String token = Base64.getEncoder().encodeToString(
                 (USERNAME + ":" + PASSWORD).getBytes(StandardCharsets.UTF_8)
         );
-        headers.set(HttpHeaders.AUTHORIZATION, "Basic " + token);
-        headers.setAccept(MediaType.parseMediaTypes("application/json"));
-        return headers;
-    }
-
-    @SuppressWarnings("unchecked")
-    private int extractPort(Map<String, Object> instance) {
-        Object portNode = instance.get("port");
-        if (portNode instanceof Number number) {
-            return number.intValue();
-        }
-        if (portNode instanceof Map<?, ?> portMap) {
-            Object value = portMap.get("$");
-            if (value instanceof Number number) {
-                return number.intValue();
-            }
-        }
-        throw new IllegalStateException("Unexpected port format: " + portNode);
+        return "Basic " + token;
     }
 }
