@@ -26,4 +26,9 @@ public class Queen extends Piece {
     public boolean requiresClearPath() {
         return true;
     }
+
+    @Override
+    public char getFenChar() {
+        return isWhite() ? 'Q' : 'q';
+    }
 }
