@@ -32,3 +32,15 @@ chess:
   api:
     url: ${CHESS_API_URL:https://chess-api.com/v1}
     timeout-seconds: 10
+
+llm:
+  base-url: ${LLM_BASE_URL:https://api.openai.com/v1}
+  api-key: ${LLM_API_KEY:}
+  model: ${LLM_MODEL:gpt-4o-mini}
+  max-tokens: 40
+  timeout-seconds: 8
+
+bot:
+  trash-talk:
+    enabled: ${BOT_TRASH_TALK_ENABLED:true}
+    probability: ${BOT_TRASH_TALK_PROBABILITY:0.4}

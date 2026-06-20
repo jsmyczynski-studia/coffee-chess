@@ -57,7 +57,7 @@ class GameEngineServiceTest {
                 .whiteTimeMs(300_000)
                 .blackTimeMs(300_000)
                 .updatedAt(LocalDateTime.now())
-                .pgnMoves("")
+                .moveListUci("")
                 .build();
     }
 
