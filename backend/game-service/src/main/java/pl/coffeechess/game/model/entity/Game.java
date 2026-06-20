@@ -2,6 +2,7 @@ package pl.coffeechess.game.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import pl.coffeechess.game.model.enums.BotDifficulty;
 import pl.coffeechess.game.model.enums.Color;
 import pl.coffeechess.game.model.enums.EndReason;
 import pl.coffeechess.game.model.enums.GameStatus;
@@ -29,6 +30,18 @@ public class Game {
 
     @Column(name = "black_player_id")
     private UUID blackPlayerId;
+
+    @Column(name = "vs_bot", nullable = false)
+    @Builder.Default
+    private boolean vsBot = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "bot_color", length = 8)
+    private Color botColor;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "bot_difficulty", length = 16)
+    private BotDifficulty botDifficulty;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)

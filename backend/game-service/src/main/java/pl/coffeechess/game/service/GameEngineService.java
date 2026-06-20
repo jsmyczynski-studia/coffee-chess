@@ -63,6 +63,13 @@ public class GameEngineService {
             return flagFallDto;
         }
 
+        MoveResult result = applyMove(game, board, moveUciRequest, activeColor);
+        broadcast(game, result.dto());
+        return result.dto();
+    }
+
+    // stosuje zwalidowany ruch i zapisuje stan; używane przez gracza i bota
+    MoveResult applyMove(Game game, GameBoard board, String moveUciRequest, Color activeColor) {
         if (moveUciRequest == null || moveUciRequest.length() < 4 || moveUciRequest.length() > 5) {
             throw new IllegalArgumentException("Invalid move format");
         }
@@ -155,11 +162,17 @@ public class GameEngineService {
                 game.getStatus(),
                 moveUciRequest
         );
-        broadcast(game, dto);
-        return dto;
+        return new MoveResult(dto, isCapture, activeColor);
     }
 
+    // wynik zastosowanego ruchu wykorzystywany przez logikę bota
+    public record MoveResult(GameUpdateDto dto, boolean capture, Color movedColor) { }
+
     private void verifyPlayerTurn(Game game, UUID playerId, Color activeColor) {
+        // ruch bota nie jest powiązany z id gracza
+        if (game.isVsBot() && game.getBotColor() == activeColor) {
+            throw new IllegalArgumentException("It's the bot's turn!");
+        }
         UUID expectedPlayerId = (activeColor == Color.WHITE) ? game.getWhitePlayerId() : game.getBlackPlayerId();
         if (expectedPlayerId == null || !expectedPlayerId.equals(playerId)) {
             throw new IllegalArgumentException("It's not your turn!");

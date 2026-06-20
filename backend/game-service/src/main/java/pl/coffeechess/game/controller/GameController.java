@@ -12,12 +12,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import pl.coffeechess.game.model.dto.ChatMessageDto;
 import pl.coffeechess.game.model.dto.CreateGameRequest;
 import pl.coffeechess.game.model.dto.GameDto;
 import pl.coffeechess.game.model.dto.GameUpdateDto;
 import pl.coffeechess.game.model.dto.MoveRequest;
+import pl.coffeechess.game.model.dto.SendChatRequest;
 import pl.coffeechess.game.model.entity.Game;
 import pl.coffeechess.game.repository.GameRepository;
+import pl.coffeechess.game.service.BotMoveService;
+import pl.coffeechess.game.service.ChatService;
 import pl.coffeechess.game.service.GameEngineService;
 import pl.coffeechess.game.service.GameManagementService;
 
@@ -31,6 +35,8 @@ public class GameController {
 
     private final GameManagementService gameManagementService;
     private final GameEngineService gameEngineService;
+    private final BotMoveService botMoveService;
+    private final ChatService chatService;
     private final GameRepository gameRepository;
 
     @PostMapping
@@ -66,7 +72,23 @@ public class GameController {
         if (request == null || request.move() == null || request.move().isBlank()) {
             throw new IllegalArgumentException("Invalid move format");
         }
-        return gameEngineService.processMove(id, subjectAsUuid(jwt), request.move());
+        GameUpdateDto result = gameEngineService.processMove(id, subjectAsUuid(jwt), request.move());
+        // po ruchu człowieka bot odpowiada automatycznie
+        botMoveService.playBotTurnIfNeeded(id);
+        return result;
+    }
+
+    @GetMapping("/{id}/chat")
+    public List<ChatMessageDto> getChat(@PathVariable UUID id) {
+        return chatService.getHistory(id);
+    }
+
+    @PostMapping("/{id}/chat")
+    public ChatMessageDto sendChat(@PathVariable UUID id,
+                                   @RequestBody SendChatRequest request,
+                                   @AuthenticationPrincipal Jwt jwt) {
+        String text = request == null ? null : request.text();
+        return chatService.sendUserMessage(id, subjectAsUuid(jwt), text);
     }
 
     @PostMapping("/{id}/resign")

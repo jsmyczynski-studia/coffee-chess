@@ -1,6 +1,7 @@
 package pl.coffeechess.game.model.dto;
 
 import pl.coffeechess.game.model.entity.Game;
+import pl.coffeechess.game.model.enums.BotDifficulty;
 import pl.coffeechess.game.model.enums.Color;
 import pl.coffeechess.game.model.enums.EndReason;
 import pl.coffeechess.game.model.enums.GameStatus;
@@ -21,6 +22,9 @@ public record GameDto(
         long blackTimeMs,
         Color turn,
         Color drawOfferedBy,
+        boolean vsBot,
+        Color botColor,
+        BotDifficulty botDifficulty,
         LocalDateTime startedAt,
         LocalDateTime endedAt
 ) {
@@ -45,6 +49,9 @@ public record GameDto(
                 game.getBlackTimeMs(),
                 turn,
                 game.getDrawOfferedBy(),
+                game.isVsBot(),
+                game.getBotColor(),
+                game.getBotDifficulty(),
                 game.getStartedAt(),
                 game.getEndedAt()
         );

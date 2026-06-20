@@ -8,6 +8,7 @@ import pl.coffeechess.game.kafka.GameCompletedProducer;
 import pl.coffeechess.game.model.dto.CreateGameRequest;
 import pl.coffeechess.game.model.dto.GameUpdateDto;
 import pl.coffeechess.game.model.entity.Game;
+import pl.coffeechess.game.model.enums.BotDifficulty;
 import pl.coffeechess.game.model.enums.Color;
 import pl.coffeechess.game.model.enums.EndReason;
 import pl.coffeechess.game.model.enums.GameStatus;
@@ -33,6 +34,10 @@ public class GameManagementService {
 
     @Transactional
     public Game createGame(CreateGameRequest request, UUID creatorId) {
+        if (request.vsBot()) {
+            return createBotGame(request, creatorId);
+        }
+
         UUID white = request.whitePlayerId();
         UUID black = request.blackPlayerId();
 
@@ -65,6 +70,45 @@ public class GameManagementService {
                 .blackTimeMs(timeMs)
                 .startedAt(now)
                 .status(initialStatus)
+                .moveListUci("")
+                .halfmoveClock(0L)
+                .positionHistory("")
+                .createdAt(now)
+                .build();
+        return gameRepository.save(game);
+    }
+
+    // tworzy grę przeciwko botowi - człowiek wybiera kolor i poziom trudności
+    @Transactional
+    public Game createBotGame(CreateGameRequest request, UUID creatorId) {
+        if (creatorId == null) {
+            throw new IllegalArgumentException("Authenticated player is required.");
+        }
+        Color humanColor = request.playerColor() == null ? Color.WHITE : request.playerColor();
+        Color botColor = humanColor.opposite();
+        BotDifficulty difficulty = request.botDifficulty() == null ? BotDifficulty.MEDIUM : request.botDifficulty();
+
+        UUID white = humanColor == Color.WHITE ? creatorId : null;
+        UUID black = humanColor == Color.BLACK ? creatorId : null;
+
+        long timeMs = parseTimeControlToMs(request.timeControl());
+        String startingFen = (request.startingFen() == null || request.startingFen().isBlank())
+                ? STANDARD_START_FEN
+                : request.startingFen();
+        LocalDateTime now = LocalDateTime.now();
+
+        Game game = Game.builder()
+                .whitePlayerId(white)
+                .blackPlayerId(black)
+                .vsBot(true)
+                .botColor(botColor)
+                .botDifficulty(difficulty)
+                .currentFen(startingFen)
+                .timeControl(request.timeControl())
+                .whiteTimeMs(timeMs)
+                .blackTimeMs(timeMs)
+                .startedAt(now)
+                .status(GameStatus.IN_PROGRESS)
                 .moveListUci("")
                 .halfmoveClock(0L)
                 .positionHistory("")
