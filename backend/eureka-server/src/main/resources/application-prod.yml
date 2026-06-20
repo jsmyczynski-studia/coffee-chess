@@ -1,0 +1,22 @@
+eureka:
+  server:
+    enable-self-preservation: true
+    wait-time-in-ms-when-sync-empty: 300000
+    renewal-percent-threshold: 0.85
+    peer-eureka-nodes-update-interval-ms: 60000
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+
+logging:
+  level:
+    root: WARN
+    pl.coffeechess.eureka: INFO

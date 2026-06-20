@@ -1,39 +1,60 @@
 spring:
   application:
     name: eureka-server
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   security:
     user:
       name: ${EUREKA_USERNAME:eureka}
-      password: ${EUREKA_PASSWORD:secret}
+      password: ${EUREKA_PASSWORD:eurekaSecret123}
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 
 server:
   port: 8761
+  shutdown: graceful
 
 eureka:
   security:
     username: ${EUREKA_USERNAME:eureka}
-    password: ${EUREKA_PASSWORD:secret}
+    password: ${EUREKA_PASSWORD:eurekaSecret123}
   instance:
     hostname: ${EUREKA_HOSTNAME:localhost}
     prefer-ip-address: false
   client:
-    register-with-eureka: false   # sam siebie nie rejestruje
-    fetch-registry: false         # nie pobiera rejestru od siebie
+    register-with-eureka: false
+    fetch-registry: false
     service-url:
       defaultZone: http://${eureka.security.username}:${eureka.security.password}@${eureka.instance.hostname}:${server.port}/eureka/
   server:
-    wait-time-in-ms-when-sync-empty: 0           # szybszy start w dev
-    enable-self-preservation: false              # wyłączone w dev, włącz na prod!
-    eviction-interval-timer-in-ms: 5000          # co 5s usuwa martwe instancje
+    eviction-interval-timer-in-ms: 5000
+    response-cache-update-interval-ms: 3000
+    renewal-percent-threshold: 0.85
 
 management:
   endpoints:
     web:
       exposure:
-        include: health, info
+        include: health, info, eureka-registry
   endpoint:
     health:
-      show-details: always
+      probes:
+        enabled: true
+    eureka-registry:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Coffee Chess Eureka Server
+    description: Service discovery for coffee-chess microservices
+  expected-services:
+    - config-server
+    - user-service
+    - game-service
+    - analysis-service
 
 logging:
   level:

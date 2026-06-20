@@ -11,7 +11,7 @@ COPY backend/analysis-service/pom.xml backend/analysis-service/pom.xml
 RUN mvn -pl backend/eureka-server -am dependency:go-offline -B
 
 COPY backend/eureka-server/src backend/eureka-server/src
-RUN mvn -pl backend/eureka-server -am clean package -DskipTests -B
+RUN mvn -pl backend/eureka-server -am clean package -Dmaven.test.skip=true -B
 
 FROM eclipse-temurin:25-jre-alpine
 
@@ -23,4 +23,4 @@ COPY --from=builder /workspace/backend/eureka-server/target/eureka-server-*.jar 
 
 EXPOSE 8761
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

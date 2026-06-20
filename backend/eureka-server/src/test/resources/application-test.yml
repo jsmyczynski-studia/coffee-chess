@@ -1,0 +1,24 @@
+spring:
+  security:
+    user:
+      name: eureka
+      password: testSecret
+
+eureka:
+  security:
+    username: eureka
+    password: testSecret
+  instance:
+    hostname: localhost
+  server:
+    enable-self-preservation: false
+    wait-time-in-ms-when-sync-empty: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, eureka-registry
+  endpoint:
+    health:
+      show-details: always
