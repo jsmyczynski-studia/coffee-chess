@@ -23,10 +23,11 @@ public class GameCompletedProducer {
 
         GameCompletedEvent payload = new GameCompletedEvent(
                 game.getId().toString(),
-                game.getWhitePlayerId().toString(),
-                game.getBlackPlayerId().toString(),
+                game.getWhitePlayerId() == null ? null : game.getWhitePlayerId().toString(),
+                game.getBlackPlayerId() == null ? null : game.getBlackPlayerId().toString(),
                 outcome,
-                game.getPgnMoves()
+                game.getEndReason() == null ? null : game.getEndReason().name(),
+                game.getMoveListUci()
         );
 
         kafkaTemplate.send(TOPIC_NAME, game.getId().toString(), payload);
@@ -37,6 +38,7 @@ public class GameCompletedProducer {
             String whitePlayerId,
             String blackPlayerId,
             String outcome,
-            String pgn
+            String endReason,
+            String moveListUci
     ) {}
 }

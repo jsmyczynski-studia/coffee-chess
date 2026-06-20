@@ -2,6 +2,7 @@ package pl.coffeechess.game.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import pl.coffeechess.game.model.enums.Color;
 import pl.coffeechess.game.model.enums.EndReason;
 import pl.coffeechess.game.model.enums.GameStatus;
 
@@ -23,10 +24,10 @@ public class Game {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "white_player_id", nullable = false)
+    @Column(name = "white_player_id")
     private UUID whitePlayerId;
 
-    @Column(name = "black_player_id", nullable = false)
+    @Column(name = "black_player_id")
     private UUID blackPlayerId;
 
     @Enumerated(EnumType.STRING)
@@ -41,8 +42,8 @@ public class Game {
     @Column(name = "current_fen", nullable = false, columnDefinition = "TEXT")
     private String currentFen;
 
-    @Column(name = "pgn_moves", columnDefinition = "TEXT")
-    private String pgnMoves;
+    @Column(name = "move_list_uci", columnDefinition = "TEXT")
+    private String moveListUci;
 
     @Column(name = "time_control", length = 32)
     private String timeControl;
@@ -59,6 +60,18 @@ public class Game {
     @Column(name = "ended_at")
     private LocalDateTime endedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "draw_offered_by", length = 8)
+    private Color drawOfferedBy;
+
+    @Column(name = "halfmove_clock", nullable = false)
+    @Builder.Default
+    private long halfmoveClock = 0L;
+
+    @Column(name = "position_history", columnDefinition = "TEXT")
+    @Builder.Default
+    private String positionHistory = "";
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -73,5 +86,16 @@ public class Game {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void appendPositionHistory(String key) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        if (positionHistory == null || positionHistory.isEmpty()) {
+            positionHistory = key;
+        } else {
+            positionHistory = positionHistory + ";" + key;
+        }
     }
 }
