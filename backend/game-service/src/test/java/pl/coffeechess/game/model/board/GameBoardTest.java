@@ -10,7 +10,8 @@ import pl.coffeechess.game.model.piece.Piece;
 import pl.coffeechess.game.model.piece.Queen;
 import pl.coffeechess.game.model.piece.Rook;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class GameBoardTest {
 
@@ -32,7 +33,7 @@ class GameBoardTest {
         assertPiece(board.getPieceAt("e8"), PieceType.KING, Color.BLACK);
         assertPiece(board.getPieceAt("h7"), PieceType.PAWN, Color.BLACK);
 
-        assertTrue(board.isEmpty("e4"));
+        assertThat(board.isEmpty("e4")).isTrue();
     }
 
     @Test
@@ -42,20 +43,20 @@ class GameBoardTest {
 
         board.placePiece("e1", king);
 
-        assertSame(king, board.getPieceAt("e1"));
-        assertTrue(board.hasPiece("e1"));
-        assertSame(king, board.removePiece("e1"));
-        assertTrue(board.isEmpty("e1"));
+        assertThat(board.getPieceAt("e1")).isSameAs(king);
+        assertThat(board.hasPiece("e1")).isTrue();
+        assertThat(board.removePiece("e1")).isSameAs(king);
+        assertThat(board.isEmpty("e1")).isTrue();
     }
 
     @Test
     void pawnCanMoveOneOrTwoSquaresForwardFromStartPosition() {
         GameBoard board = GameBoard.standardSetup();
 
-        assertNull(board.movePiece("e2", "e4"));
+        assertThat(board.movePiece("e2", "e4")).isNull();
         assertPiece(board.getPieceAt("e4"), PieceType.PAWN, Color.WHITE);
 
-        assertNull(board.movePiece("d7", "d5"));
+        assertThat(board.movePiece("d7", "d5")).isNull();
         assertPiece(board.getPieceAt("d5"), PieceType.PAWN, Color.BLACK);
     }
 
@@ -69,7 +70,7 @@ class GameBoardTest {
 
         assertPiece(capturedPiece, PieceType.PAWN, Color.BLACK);
         assertPiece(board.getPieceAt("d5"), PieceType.PAWN, Color.WHITE);
-        assertTrue(board.isEmpty("e4"));
+        assertThat(board.isEmpty("e4")).isTrue();
     }
 
     @Test
@@ -78,7 +79,8 @@ class GameBoardTest {
         board.placePiece("e2", new Pawn(Color.WHITE));
         board.placePiece("e3", new Pawn(Color.BLACK));
 
-        assertThrows(IllegalArgumentException.class, () -> board.movePiece("e2", "e3"));
+        assertThatThrownBy(() -> board.movePiece("e2", "e3"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -88,14 +90,15 @@ class GameBoardTest {
         board.movePiece("g1", "f3");
 
         assertPiece(board.getPieceAt("f3"), PieceType.KNIGHT, Color.WHITE);
-        assertTrue(board.isEmpty("g1"));
+        assertThat(board.isEmpty("g1")).isTrue();
     }
 
     @Test
     void slidingPiecesCannotJumpOverOtherPieces() {
         GameBoard board = GameBoard.standardSetup();
 
-        assertThrows(IllegalArgumentException.class, () -> board.movePiece("a1", "a4"));
+        assertThatThrownBy(() -> board.movePiece("a1", "a4"))
+                .isInstanceOf(IllegalArgumentException.class);
         assertPiece(board.getPieceAt("a1"), PieceType.ROOK, Color.WHITE);
     }
 
@@ -148,29 +151,31 @@ class GameBoardTest {
         board.placePiece("a1", new Rook(Color.WHITE));
         board.placePiece("a8", new King(Color.WHITE));
 
-        assertThrows(IllegalArgumentException.class, () -> board.movePiece("a1", "a8"));
+        assertThatThrownBy(() -> board.movePiece("a1", "a8"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void invalidSquaresAreRejected() {
         GameBoard board = GameBoard.empty();
 
-        assertThrows(IllegalArgumentException.class, () -> board.getPieceAt("i1"));
-        assertThrows(IllegalArgumentException.class, () -> board.getPieceAt("a9"));
-        assertThrows(IllegalArgumentException.class, () -> board.getPieceAt("e10"));
-        assertThrows(IllegalArgumentException.class, () -> board.getPieceAt(null));
+        assertThatThrownBy(() -> board.getPieceAt("i1")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> board.getPieceAt("a9")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> board.getPieceAt("e10")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> board.getPieceAt(null)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void moveFromEmptySquareIsRejected() {
         GameBoard board = GameBoard.empty();
 
-        assertThrows(IllegalStateException.class, () -> board.movePiece("e4", "e5"));
+        assertThatThrownBy(() -> board.movePiece("e4", "e5"))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     private static void assertPiece(Piece piece, PieceType type, Color color) {
-        assertNotNull(piece);
-        assertEquals(type, piece.getType());
-        assertEquals(color, piece.getColor());
+        assertThat(piece).isNotNull();
+        assertThat(piece.getType()).isEqualTo(type);
+        assertThat(piece.getColor()).isEqualTo(color);
     }
 }

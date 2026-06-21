@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import pl.coffeechess.game.model.enums.Color;
 import pl.coffeechess.game.model.enums.PieceType;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class PieceTest {
 
@@ -23,49 +23,49 @@ class PieceTest {
         Piece whitePiece = new Pawn(Color.WHITE);
         Piece blackPiece = new Pawn(Color.BLACK);
 
-        assertTrue(whitePiece.isWhite());
-        assertFalse(whitePiece.isBlack());
-        assertTrue(blackPiece.isBlack());
-        assertFalse(blackPiece.isWhite());
+        assertThat(whitePiece.isWhite()).isTrue();
+        assertThat(whitePiece.isBlack()).isFalse();
+        assertThat(blackPiece.isBlack()).isTrue();
+        assertThat(blackPiece.isWhite()).isFalse();
     }
 
     @Test
     void piecesKnowTheirBasicMovePatterns() {
-        assertTrue(new King(Color.WHITE).canMove(7, 4, 6, 5, false));
-        assertFalse(new King(Color.WHITE).canMove(7, 4, 5, 4, false));
+        assertThat(new King(Color.WHITE).canMove(7, 4, 6, 5, false)).isTrue();
+        assertThat(new King(Color.WHITE).canMove(7, 4, 5, 4, false)).isFalse();
 
-        assertTrue(new Queen(Color.WHITE).canMove(7, 3, 3, 7, false));
-        assertTrue(new Queen(Color.WHITE).canMove(7, 3, 0, 3, false));
-        assertFalse(new Queen(Color.WHITE).canMove(7, 3, 5, 4, false));
+        assertThat(new Queen(Color.WHITE).canMove(7, 3, 3, 7, false)).isTrue();
+        assertThat(new Queen(Color.WHITE).canMove(7, 3, 0, 3, false)).isTrue();
+        assertThat(new Queen(Color.WHITE).canMove(7, 3, 5, 4, false)).isFalse();
 
-        assertTrue(new Rook(Color.WHITE).canMove(7, 0, 0, 0, false));
-        assertFalse(new Rook(Color.WHITE).canMove(7, 0, 5, 2, false));
+        assertThat(new Rook(Color.WHITE).canMove(7, 0, 0, 0, false)).isTrue();
+        assertThat(new Rook(Color.WHITE).canMove(7, 0, 5, 2, false)).isFalse();
 
-        assertTrue(new Bishop(Color.WHITE).canMove(7, 2, 3, 6, false));
-        assertFalse(new Bishop(Color.WHITE).canMove(7, 2, 3, 2, false));
+        assertThat(new Bishop(Color.WHITE).canMove(7, 2, 3, 6, false)).isTrue();
+        assertThat(new Bishop(Color.WHITE).canMove(7, 2, 3, 2, false)).isFalse();
 
-        assertTrue(new Knight(Color.WHITE).canMove(7, 6, 5, 5, false));
-        assertFalse(new Knight(Color.WHITE).canMove(7, 6, 6, 6, false));
+        assertThat(new Knight(Color.WHITE).canMove(7, 6, 5, 5, false)).isTrue();
+        assertThat(new Knight(Color.WHITE).canMove(7, 6, 6, 6, false)).isFalse();
 
-        assertTrue(new Pawn(Color.WHITE).canMove(6, 4, 4, 4, false));
-        assertTrue(new Pawn(Color.WHITE).canMove(6, 4, 5, 5, true));
-        assertFalse(new Pawn(Color.WHITE).canMove(6, 4, 5, 5, false));
-        assertTrue(new Pawn(Color.BLACK).canMove(1, 4, 3, 4, false));
-        assertTrue(new Pawn(Color.BLACK).canMove(1, 4, 2, 5, true));
+        assertThat(new Pawn(Color.WHITE).canMove(6, 4, 4, 4, false)).isTrue();
+        assertThat(new Pawn(Color.WHITE).canMove(6, 4, 5, 5, true)).isTrue();
+        assertThat(new Pawn(Color.WHITE).canMove(6, 4, 5, 5, false)).isFalse();
+        assertThat(new Pawn(Color.BLACK).canMove(1, 4, 3, 4, false)).isTrue();
+        assertThat(new Pawn(Color.BLACK).canMove(1, 4, 2, 5, true)).isTrue();
     }
 
     @Test
     void slidingPiecesRequireClearPath() {
-        assertTrue(new Queen(Color.WHITE).requiresClearPath());
-        assertTrue(new Rook(Color.WHITE).requiresClearPath());
-        assertTrue(new Bishop(Color.WHITE).requiresClearPath());
-        assertFalse(new King(Color.WHITE).requiresClearPath());
-        assertFalse(new Knight(Color.WHITE).requiresClearPath());
-        assertFalse(new Pawn(Color.WHITE).requiresClearPath());
+        assertThat(new Queen(Color.WHITE).requiresClearPath()).isTrue();
+        assertThat(new Rook(Color.WHITE).requiresClearPath()).isTrue();
+        assertThat(new Bishop(Color.WHITE).requiresClearPath()).isTrue();
+        assertThat(new King(Color.WHITE).requiresClearPath()).isFalse();
+        assertThat(new Knight(Color.WHITE).requiresClearPath()).isFalse();
+        assertThat(new Pawn(Color.WHITE).requiresClearPath()).isFalse();
     }
 
     private static void assertPiece(Piece piece, Color color, PieceType type) {
-        assertEquals(color, piece.getColor());
-        assertEquals(type, piece.getType());
+        assertThat(piece.getColor()).isEqualTo(color);
+        assertThat(piece.getType()).isEqualTo(type);
     }
 }

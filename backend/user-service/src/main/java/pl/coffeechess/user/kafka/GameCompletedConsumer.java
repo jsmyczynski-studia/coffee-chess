@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import pl.coffeechess.user.model.dto.EloUpdateDto;
 import pl.coffeechess.user.model.entity.EloHistory;
 import pl.coffeechess.user.model.entity.GameHistory;
 import pl.coffeechess.user.model.entity.User;
@@ -27,23 +26,38 @@ public class GameCompletedConsumer {
     private final EloService eloService;
 
     @KafkaListener(topics = "game-completed", groupId = "user-service-group")
-    public void onGameCompleted(EloUpdateDto event) {
+    public void onGameCompleted(GameCompletedEvent event) {
         log.info("Received game-completed event for gameId={}", event.gameId());
 
-        User white = userRepository.findById(event.whitePlayerId()).orElseThrow();
-        User black = userRepository.findById(event.blackPlayerId()).orElseThrow();
+        UUID gameId = UUID.fromString(event.gameId());
+        UUID whitePlayerId = parsePlayerId(event.whitePlayerId());
+        UUID blackPlayerId = parsePlayerId(event.blackPlayerId());
+
+        if (whitePlayerId == null || blackPlayerId == null) {
+            log.info("Skipping Elo update for gameId={} (not a ranked human-vs-human game)", gameId);
+            return;
+        }
+
+        if ("ABORTED".equals(event.outcome())) {
+            log.info("Skipping Elo update for aborted gameId={}", gameId);
+            return;
+        }
+
+        User white = userRepository.findById(whitePlayerId).orElseThrow();
+        User black = userRepository.findById(blackPlayerId).orElseThrow();
 
         double whiteScore = switch (event.outcome()) {
             case "WHITE_WINS" -> 1.0;
             case "BLACK_WINS" -> 0.0;
-            default -> 0.5;
+            case "DRAW" -> 0.5;
+            default -> throw new IllegalArgumentException("Unsupported outcome for Elo: " + event.outcome());
         };
 
         int whiteChange = eloService.calculateEloChange(white.getEloRating(), black.getEloRating(), whiteScore);
         int blackChange = eloService.calculateEloChange(black.getEloRating(), white.getEloRating(), 1.0 - whiteScore);
 
-        saveEloHistory(white, black, event.gameId(), whiteChange, whiteScore);
-        saveEloHistory(black, white, event.gameId(), blackChange, 1.0 - whiteScore);
+        saveEloHistory(white, black, gameId, whiteChange, whiteScore);
+        saveEloHistory(black, white, gameId, blackChange, 1.0 - whiteScore);
 
         white.setEloRating(Math.max(100, white.getEloRating() + whiteChange));
         black.setEloRating(Math.max(100, black.getEloRating() + blackChange));
@@ -54,16 +68,19 @@ public class GameCompletedConsumer {
         userRepository.save(black);
 
         gameHistoryRepository.save(GameHistory.builder()
-                .gameId(event.gameId())
-                .whitePlayerId(event.whitePlayerId())
-                .blackPlayerId(event.blackPlayerId())
+                .gameId(gameId)
+                .whitePlayerId(whitePlayerId)
+                .blackPlayerId(blackPlayerId)
                 .outcome(GameHistory.GameOutcome.valueOf(event.outcome()))
                 .whiteEloChange(whiteChange)
                 .blackEloChange(blackChange)
-                .pgn(event.pgn())
                 .timeControl(event.timeControl())
                 .playedAt(LocalDateTime.now())
                 .build());
+    }
+
+    private static UUID parsePlayerId(String playerId) {
+        return playerId == null || playerId.isBlank() ? null : UUID.fromString(playerId);
     }
 
     private void saveEloHistory(User player, User opponent, UUID gameId, int eloChange, double score) {

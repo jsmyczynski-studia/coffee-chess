@@ -87,26 +87,6 @@ services:
       retries: 10
     restart: unless-stopped
 
-  postgres-analysis:
-    image: postgres:16-alpine
-    container_name: cc-postgres-analysis
-    ports:
-      - "5434:5432"
-    environment:
-      POSTGRES_DB: analysisdb
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - postgres-analysis-data:/var/lib/postgresql/data
-    networks:
-      - coffee-chess-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d analysisdb"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
   kafka:
     image: apache/kafka:4.1.0
     container_name: cc-kafka
@@ -239,16 +219,10 @@ services:
       EUREKA_USERNAME: ${EUREKA_USERNAME}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD}
       EUREKA_HOST: eureka-server
-      DB_ANALYSIS_HOST: postgres-analysis
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      KAFKA_HOST: kafka
     depends_on:
       config-server:
         condition: service_healthy
-      postgres-analysis:
-        condition: service_healthy
-      kafka:
+      eureka-server:
         condition: service_healthy
     networks:
       - coffee-chess-net
@@ -296,4 +270,3 @@ networks:
 volumes:
   postgres-user-data:
   postgres-game-data:
-  postgres-analysis-data:
