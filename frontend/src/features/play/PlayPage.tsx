@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, type FormEvent } from 'react';
+import { useEffect, useState, useRef, useCallback, type FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { Chessboard } from 'react-chessboard';
 import { Client } from '@stomp/stompjs';
@@ -7,262 +7,295 @@ import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { gameApi } from '../../lib/api/gameApi';
-import type { GameDto, GameUpdateDto, ChatMessageDto } from '../../lib/api/types';
+import type { GameDto, ChatMessageDto } from '../../lib/api/types';
+
+const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 export function PlayPage() {
   const { id } = useParams<{ id: string }>();
   const { token, user } = useAuth();
-  
+
   const [game, setGame] = useState<GameDto | null>(null);
-  const [fen, setFen] = useState<string>('start');
   const [error, setError] = useState<string | null>(null);
-  const [localWhiteTime, setLocalWhiteTime] = useState<number>(0);
-  const [localBlackTime, setLocalBlackTime] = useState<number>(0);
-  
+  const [whiteTime, setWhiteTime] = useState<number>(0);
+  const [blackTime, setBlackTime] = useState<number>(0);
+
   const [chatMessages, setChatMessages] = useState<ChatMessageDto[]>([]);
   const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const applyGameUpdate = (update: GameUpdateDto) => {
-    const nextTurn = update.fen.split(' ')[1] === 'w' ? 'WHITE' : 'BLACK';
+  // Click-to-move: first click selects a square, second click submits the move.
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
 
-    setFen(update.fen);
-    setLocalWhiteTime(update.whiteTimeMs);
-    setLocalBlackTime(update.blackTimeMs);
+  // The board position is always whatever the backend last told us. The backend is the
+  // single source of truth for all chess logic and validation.
+  const fen = game?.currentFen || START_FEN;
 
-    setGame(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        currentFen: update.fen,
-        status: update.status,
-        whiteTimeMs: update.whiteTimeMs,
-        blackTimeMs: update.blackTimeMs,
-        turn: nextTurn,
-        moveListUci: update.lastMove
-          ? (prev.moveListUci ? `${prev.moveListUci} ${update.lastMove}` : update.lastMove)
-          : prev.moveListUci,
-      };
-    });
-  };
+  // --- Data loading (HTTP is authoritative; websocket is only a live-update bonus) ---
 
-  const refreshGame = async () => {
+  const lastTurnRef = useRef<string | null>(null);
+
+  const loadGame = useCallback(async () => {
     if (!id || !token) return;
-    const fullGame = await gameApi.getGame(id, token);
-    setGame(fullGame);
-    if (fullGame.currentFen) setFen(fullGame.currentFen);
-    setLocalWhiteTime(fullGame.whiteTimeMs);
-    setLocalBlackTime(fullGame.blackTimeMs);
-  };
-
-  // Initial fetch and WebSocket setup
-  useEffect(() => {
-    if (!id) return;
-
-    // 1. Fetch initial game state and chat history
-    gameApi.getGame(id, token ?? undefined)
-      .then((data) => {
-        setGame(data);
-        if (data.currentFen) setFen(data.currentFen);
-        setLocalWhiteTime(data.whiteTimeMs);
-        setLocalBlackTime(data.blackTimeMs);
-      })
-      .catch((err) => {
-        setError(err.message || 'Nie udało się pobrać gry');
-      });
-
-    if (token) {
-      gameApi.getChat(id, token)
-        .then(setChatMessages)
-        .catch(console.error);
+    const data = await gameApi.getGame(id, token);
+    setGame(data);
+    // Only resync the clock from the server when the turn changed (a move happened) or the
+    // game isn't actively running. Between moves the server clock is already counting down
+    // live, but resyncing on every 1.5s poll fought the local 1s tick and made the displayed
+    // time visibly jump backwards. Letting the local tick run between turn changes is smooth.
+    const turnChanged = data.turn !== lastTurnRef.current;
+    if (turnChanged || data.status !== 'IN_PROGRESS') {
+      setWhiteTime(data.whiteTimeMs);
+      setBlackTime(data.blackTimeMs);
+      lastTurnRef.current = data.turn;
     }
+  }, [id, token]);
 
-    // 2. Setup STOMP WebSocket
+  const loadChat = useCallback(async () => {
+    if (!id || !token) return;
+    const msgs = await gameApi.getChat(id, token);
+    setChatMessages(msgs);
+  }, [id, token]);
+
+  // Initial load.
+  useEffect(() => {
+    if (!id || !token) return;
+    loadGame().catch((e) => setError(e?.message || 'Nie udało się pobrać gry'));
+    loadChat().catch(() => undefined);
+  }, [id, token, loadGame, loadChat]);
+
+  // Polling fallback: keep game + chat fresh over plain HTTP so moves (including the bot's),
+  // opponent moves and chat all appear even if the websocket never connects.
+  useEffect(() => {
+    if (!id || !token) return;
+    if (game && game.status !== 'IN_PROGRESS' && game.status !== 'WAITING_FOR_OPPONENT') return;
+
+    const interval = setInterval(() => {
+      loadGame().catch(() => undefined);
+      loadChat().catch(() => undefined);
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [id, token, game?.status, loadGame, loadChat]);
+
+  // Optional websocket for instant updates. If it fails, polling already covers us.
+  useEffect(() => {
+    if (!id || !token) return;
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
 
-    const stompClient = new Client({
+    const client = new Client({
       brokerURL: wsUrl,
       reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
       onConnect: () => {
-        // Chat Channel
-        stompClient.subscribe(`/topic/games/${id}/chat`, (message) => {
-          const chatMsg: ChatMessageDto = JSON.parse(message.body);
-          setChatMessages(prev => [...prev, chatMsg]);
+        client.subscribe(`/topic/games/${id}`, () => {
+          loadGame().catch(() => undefined);
         });
-
-        // Game Update Channel
-        stompClient.subscribe(`/topic/games/${id}`, (message) => {
-          const update: GameUpdateDto = JSON.parse(message.body);
-          applyGameUpdate(update);
-
-          // Re-fetch full game state in background to update drawOfferedBy and endReason smoothly without backend changes
-          refreshGame().catch(console.error);
+        client.subscribe(`/topic/games/${id}/chat`, () => {
+          loadChat().catch(() => undefined);
         });
       },
-      onStompError: (frame) => {
-        console.error('STOMP Broker reported error:', frame.headers['message']);
-      }
     });
 
-    stompClient.activate();
-
+    client.activate();
     return () => {
-      stompClient.deactivate();
+      client.deactivate().catch(() => undefined);
     };
-  }, [id, token]);
+  }, [id, token, loadGame, loadChat]);
 
-  // Local clock tick
+  // Local clock tick between server updates.
   useEffect(() => {
     if (game?.status !== 'IN_PROGRESS') return;
-
     const tick = setInterval(() => {
-      if (game.turn === 'WHITE') {
-        setLocalWhiteTime(prev => Math.max(0, prev - 1000));
-      } else {
-        setLocalBlackTime(prev => Math.max(0, prev - 1000));
-      }
+      if (game.turn === 'WHITE') setWhiteTime((t) => Math.max(0, t - 1000));
+      else setBlackTime((t) => Math.max(0, t - 1000));
     }, 1000);
-
     return () => clearInterval(tick);
   }, [game?.status, game?.turn]);
 
-  // Auto-scroll chat to bottom
+  // Auto-scroll chat.
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  const onPieceDrop = ({ sourceSquare, targetSquare, piece }: { sourceSquare: string, targetSquare: string | null, piece: { pieceType: string } }) => {
-    if (!id || !token || !game || !targetSquare) return false;
+  // --- Move handling ---
 
-    let moveUci = sourceSquare + targetSquare;
-    if (piece.pieceType === 'wP' && targetSquare.endsWith('8')) moveUci += 'q';
-    if (piece.pieceType === 'bP' && targetSquare.endsWith('1')) moveUci += 'q';
+  const playerColor = user?.id === game?.whitePlayerId ? 'WHITE'
+    : user?.id === game?.blackPlayerId ? 'BLACK' : null;
+  const isParticipant = playerColor !== null;
+  const isMyTurn = !!game && game.status === 'IN_PROGRESS' && game.turn === playerColor;
 
-    gameApi.submitMove(id, moveUci, token)
-      .catch((err) => {
-        console.error('Invalid move or error', err);
-        const lastFen = game.currentFen || 'start';
-        setFen('8/8/8/8/8/8/8/8 w - - 0 1');
-        setTimeout(() => setFen(lastFen), 50);
-      });
-      
-    return true;
+  const submitMove = useCallback(async (from: string, to: string) => {
+    if (!id || !token || !game) return;
+
+    // Auto-queen on promotion; the backend decides legality.
+    let uci = from + to;
+    const movingPawnToLastRank =
+      (playerColor === 'WHITE' && to.endsWith('8')) ||
+      (playerColor === 'BLACK' && to.endsWith('1'));
+    if (movingPawnToLastRank) uci += 'q';
+
+    setError(null);
+    try {
+      const update = await gameApi.submitMove(id, uci, token);
+      // Apply the authoritative result immediately, then refetch full state (covers the
+      // bot's reply, draw flags, end reason, etc.). loadGame() handles the clock sync.
+      setGame((prev) => prev ? { ...prev, currentFen: update.fen, status: update.status,
+        turn: update.fen.split(' ')[1] === 'w' ? 'WHITE' : 'BLACK',
+        whiteTimeMs: update.whiteTimeMs, blackTimeMs: update.blackTimeMs } : prev);
+      await loadGame();
+      await loadChat();
+    } catch (e: any) {
+      // Illegal/rejected move: just resync to the real position.
+      setError(null);
+      await loadGame().catch(() => undefined);
+    }
+  }, [id, token, game, playerColor, loadGame, loadChat]);
+
+  const onSquareClick = ({ square, piece }: { square: string; piece: { pieceType: string } | null }) => {
+    if (!isMyTurn) return;
+
+    if (!selectedSquare) {
+      // Select only your own piece.
+      if (!piece) return;
+      const isWhitePiece = piece.pieceType.startsWith('w');
+      if ((playerColor === 'WHITE') !== isWhitePiece) return;
+      setSelectedSquare(square);
+      return;
+    }
+
+    if (square === selectedSquare) {
+      setSelectedSquare(null);
+      return;
+    }
+
+    // Clicking another of your own pieces re-selects it.
+    if (piece) {
+      const isWhitePiece = piece.pieceType.startsWith('w');
+      if ((playerColor === 'WHITE') === isWhitePiece) {
+        setSelectedSquare(square);
+        return;
+      }
+    }
+
+    const from = selectedSquare;
+    setSelectedSquare(null);
+    void submitMove(from, square);
   };
 
-  const runGameAction = async (action: () => Promise<GameUpdateDto>) => {
+  // Drag still works as a convenience, routed through the same submit path.
+  const onPieceDrop = ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
+    if (!isMyTurn || !targetSquare) return false;
+    setSelectedSquare(null);
+    void submitMove(sourceSquare, targetSquare);
+    return false;
+  };
+
+  const squareStyles = selectedSquare
+    ? { [selectedSquare]: { background: 'rgba(255, 213, 79, 0.5)' } }
+    : {};
+
+  // --- Game actions ---
+
+  const runAction = async (action: () => Promise<unknown>) => {
     if (!id || !token) return;
     setError(null);
     try {
-      const update = await action();
-      applyGameUpdate(update);
-      await refreshGame();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nie udało się wykonać akcji');
+      await action();
+      await loadGame();
+    } catch (e: any) {
+      setError(e?.message || 'Nie udało się wykonać akcji');
     }
   };
 
-  const handleResign = () => {
-    void runGameAction(() => gameApi.resign(id!, token!));
-  };
-
-  const handleOfferDraw = () => {
-    void runGameAction(() => gameApi.offerDraw(id!, token!));
-  };
-
-  const handleAcceptDraw = () => {
-    void runGameAction(() => gameApi.acceptDraw(id!, token!));
-  };
-
-  const handleDeclineDraw = () => {
-    void runGameAction(() => gameApi.declineDraw(id!, token!));
-  };
+  const handleResign = () => runAction(() => gameApi.resign(id!, token!));
+  const handleOfferDraw = () => runAction(() => gameApi.offerDraw(id!, token!));
+  const handleAcceptDraw = () => runAction(() => gameApi.acceptDraw(id!, token!));
+  const handleDeclineDraw = () => runAction(() => gameApi.declineDraw(id!, token!));
 
   const handleSendChat = (e: FormEvent) => {
     e.preventDefault();
     if (!id || !token || !chatInput.trim()) return;
-    gameApi.sendChat(id, chatInput.trim(), token)
-      .then(() => setChatInput(''))
-      .catch((err) => setError(err instanceof Error ? err.message : 'Nie udało się wysłać wiadomości'));
+    const text = chatInput.trim();
+    setChatInput('');
+    gameApi.sendChat(id, text, token)
+      .then(() => loadChat())
+      .catch((err) => setError(err?.message || 'Nie udało się wysłać wiadomości'));
   };
 
   const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
+    const total = Math.floor(ms / 1000);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  if (error) {
+  if (error && !game) {
     return <Alert tone="error" title="Błąd">{error}</Alert>;
   }
 
   if (!game) {
     return (
       <div className="page-grid">
-        <Card title="Plansza" className="span-2">Ładowanie gry...</Card>
+        <Card title="Plansza" className="span-2">Ładowanie gry…</Card>
       </div>
     );
   }
 
-  const isPlayerWhite = user?.id === game.whitePlayerId;
-  const isPlayerBlack = user?.id === game.blackPlayerId;
-  const isParticipant = isPlayerWhite || isPlayerBlack;
-  const playerColor = isPlayerWhite ? 'WHITE' : isPlayerBlack ? 'BLACK' : null;
-  
   const drawOfferedByOpponent = game.drawOfferedBy && game.drawOfferedBy !== playerColor;
   const drawOfferedByMe = game.drawOfferedBy && game.drawOfferedBy === playerColor;
+  const gameOver = game.status !== 'IN_PROGRESS' && game.status !== 'WAITING_FOR_OPPONENT';
 
   return (
-    <div className="page-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
-      <Card
-        title="Plansza"
-        subtitle={`Gra: ${game.id.split('-')[0]}... - Status: ${game.status}`}
-      >
-        <div className="board-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
-          <div className="play-sidebar-preview" style={{ display: 'flex', gap: '1rem' }}>
+    <div className="page-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))' }}>
+      <Card title="Plansza">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', gap: '1rem' }}>
             <div className={`clock-box ${game.turn === 'BLACK' ? 'active' : ''}`} style={{ padding: '0.75rem' }}>
               <span className="clock-label">Czarne</span>
-              <span className="clock-time" style={{ fontSize: '1.4rem' }}>{formatTime(localBlackTime)}</span>
+              <span className="clock-time" style={{ fontSize: '1.4rem' }}>{formatTime(blackTime)}</span>
             </div>
             <div className={`clock-box ${game.turn === 'WHITE' ? 'active' : ''}`} style={{ padding: '0.75rem' }}>
               <span className="clock-label">Białe</span>
-              <span className="clock-time" style={{ fontSize: '1.4rem' }}>{formatTime(localWhiteTime)}</span>
+              <span className="clock-time" style={{ fontSize: '1.4rem' }}>{formatTime(whiteTime)}</span>
             </div>
           </div>
 
           <div style={{ width: '100%', maxWidth: '480px', margin: '0 auto' }}>
-            <Chessboard 
+            <Chessboard
               options={{
-                position: fen, 
-                onPieceDrop: onPieceDrop, 
+                position: fen,
+                onSquareClick: onSquareClick,
+                onPieceDrop: onPieceDrop,
+                squareStyles: squareStyles,
                 animationDurationInMs: 200,
-                boardOrientation: isPlayerBlack ? 'black' : 'white'
+                boardOrientation: playerColor === 'BLACK' ? 'black' : 'white',
               }}
             />
           </div>
 
-          {game.status !== 'IN_PROGRESS' && game.status !== 'WAITING_FOR_OPPONENT' && (
+          {isMyTurn && (
+            <p className="muted small" style={{ textAlign: 'center', margin: 0 }}>
+              Twój ruch — kliknij figurę, a potem pole docelowe.
+            </p>
+          )}
+
+          {gameOver && (
             <Alert tone="info" title="Gra zakończona">
-              Powód: {game.endReason || 'Brak danych'}
+              {game.endReason ? translateEndReason(game.endReason) : 'Partia zakończona.'}
             </Alert>
           )}
 
           {isParticipant && game.status === 'IN_PROGRESS' && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
               <Button variant="danger" onClick={handleResign}>Poddaj się</Button>
-              
               {!game.drawOfferedBy && (
                 <Button variant="secondary" onClick={handleOfferDraw}>Zaproponuj remis</Button>
               )}
-              
               {drawOfferedByMe && (
-                <span className="muted" style={{ alignSelf: 'center', fontSize: '0.9rem' }}>Remis zaproponowany...</span>
+                <span className="muted" style={{ alignSelf: 'center', fontSize: '0.9rem' }}>Remis zaproponowany…</span>
               )}
-              
               {drawOfferedByOpponent && (
                 <>
                   <Button variant="primary" onClick={handleAcceptDraw}>Akceptuj remis</Button>
@@ -271,13 +304,11 @@ export function PlayPage() {
               )}
             </div>
           )}
-
         </div>
       </Card>
 
-      <Card title="Czat i Informacje">
+      <Card title="Czat">
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '400px' }}>
-          
           <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-sm)', padding: '1rem', marginBottom: '1rem', border: '1px solid var(--border-soft)' }}>
             {chatMessages.length === 0 ? (
               <p className="muted small text-center">Brak wiadomości. Przywitaj się!</p>
@@ -287,11 +318,10 @@ export function PlayPage() {
                   const isMine = msg.authorId === user?.id;
                   const isSystem = msg.type === 'SYSTEM';
                   const isBot = msg.type === 'BOT_LLM';
-                  
                   return (
-                    <div 
-                      key={msg.id || idx} 
-                      style={{ 
+                    <div
+                      key={msg.id || idx}
+                      style={{
                         alignSelf: isSystem ? 'center' : isMine ? 'flex-end' : 'flex-start',
                         background: isSystem ? 'transparent' : isBot ? 'var(--accent-soft)' : isMine ? '#304156' : 'var(--bg-input)',
                         color: isSystem ? 'var(--text-muted)' : isBot ? 'var(--accent)' : 'var(--text)',
@@ -299,7 +329,7 @@ export function PlayPage() {
                         borderRadius: '8px',
                         maxWidth: '85%',
                         fontSize: isSystem ? '0.8rem' : '0.9rem',
-                        border: isBot ? '1px solid var(--accent)' : 'none'
+                        border: isBot ? '1px solid var(--accent)' : 'none',
                       }}
                     >
                       {!isSystem && !isMine && (
@@ -317,20 +347,33 @@ export function PlayPage() {
           </div>
 
           <form onSubmit={handleSendChat} style={{ display: 'flex', gap: '0.5rem' }}>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Napisz wiadomość..." 
+              placeholder="Napisz wiadomość…"
               className="field-input"
               style={{ flex: 1 }}
-              disabled={!isParticipant || game.status !== 'IN_PROGRESS'}
+              disabled={!isParticipant}
             />
-            <Button type="submit" disabled={!isParticipant || !chatInput.trim() || game.status !== 'IN_PROGRESS'}>Wyślij</Button>
+            <Button type="submit" disabled={!isParticipant || !chatInput.trim()}>Wyślij</Button>
           </form>
-
         </div>
       </Card>
     </div>
   );
+}
+
+function translateEndReason(reason: string): string {
+  switch (reason) {
+    case 'CHECKMATE': return 'Mat.';
+    case 'RESIGNATION': return 'Poddanie.';
+    case 'STALEMATE': return 'Pat.';
+    case 'AGREEMENT': return 'Remis za zgodą stron.';
+    case 'TIME_OUT': return 'Koniec czasu.';
+    case 'INSUFFICIENT_MATERIAL': return 'Niewystarczający materiał.';
+    case 'THREEFOLD_REPETITION': return 'Trzykrotne powtórzenie pozycji.';
+    case 'FIFTY_MOVE_RULE': return 'Reguła 50 posunięć.';
+    default: return 'Partia zakończona.';
+  }
 }

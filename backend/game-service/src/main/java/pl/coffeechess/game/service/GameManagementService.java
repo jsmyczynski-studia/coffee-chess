@@ -86,7 +86,9 @@ public class GameManagementService {
         }
         Color humanColor = request.playerColor() == null ? Color.WHITE : request.playerColor();
         Color botColor = humanColor.opposite();
-        BotDifficulty difficulty = request.botDifficulty() == null ? BotDifficulty.MEDIUM : request.botDifficulty();
+        // Jeden stały poziom bota — silnik (chess-api.com) nie udostępnia regulacji siły gry,
+        // więc nie oferujemy wyboru trudności.
+        BotDifficulty difficulty = BotDifficulty.MEDIUM;
 
         UUID white = humanColor == Color.WHITE ? creatorId : null;
         UUID black = humanColor == Color.BLACK ? creatorId : null;

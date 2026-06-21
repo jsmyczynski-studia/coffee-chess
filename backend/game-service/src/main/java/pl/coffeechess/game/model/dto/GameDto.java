@@ -6,6 +6,7 @@ import pl.coffeechess.game.model.enums.Color;
 import pl.coffeechess.game.model.enums.EndReason;
 import pl.coffeechess.game.model.enums.GameStatus;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -36,6 +37,26 @@ public record GameDto(
                 turn = parts[1].equals("w") ? Color.WHITE : Color.BLACK;
             }
         }
+
+        // Report the *live* remaining time for the side to move: stored clocks are only
+        // decremented when a move is made, so without deducting the time elapsed since the
+        // last move the client clock would repeatedly jump back to the stale stored value.
+        long whiteMs = game.getWhiteTimeMs();
+        long blackMs = game.getBlackTimeMs();
+        if (turn != null && game.getStatus() == GameStatus.IN_PROGRESS) {
+            LocalDateTime ref = game.getUpdatedAt() != null
+                    ? game.getUpdatedAt()
+                    : (game.getStartedAt() != null ? game.getStartedAt() : game.getCreatedAt());
+            if (ref != null) {
+                long elapsed = Math.max(0L, Duration.between(ref, LocalDateTime.now()).toMillis());
+                if (turn == Color.WHITE) {
+                    whiteMs = Math.max(0L, whiteMs - elapsed);
+                } else {
+                    blackMs = Math.max(0L, blackMs - elapsed);
+                }
+            }
+        }
+
         return new GameDto(
                 game.getId(),
                 game.getWhitePlayerId(),
@@ -45,8 +66,8 @@ public record GameDto(
                 game.getCurrentFen(),
                 game.getMoveListUci(),
                 game.getTimeControl(),
-                game.getWhiteTimeMs(),
-                game.getBlackTimeMs(),
+                whiteMs,
+                blackMs,
                 turn,
                 game.getDrawOfferedBy(),
                 game.isVsBot(),

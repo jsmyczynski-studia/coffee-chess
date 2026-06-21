@@ -5,6 +5,6 @@ import jakarta.validation.constraints.Size;
 
 public record FriendRequestDto(
         @NotBlank
-        @Size(min = 3, max = 32)
+        @Size(max = 32)
         String nickname
 ) {}

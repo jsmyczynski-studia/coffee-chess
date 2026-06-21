@@ -6,7 +6,7 @@ import { Alert } from '../../components/ui/Alert';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { gameApi } from '../../lib/api/gameApi';
 import { userApi } from '../../lib/api/userApi';
-import type { GameDto, BotDifficulty, Color } from '../../lib/api/types';
+import type { GameDto, Color } from '../../lib/api/types';
 import { ApiError } from '../../lib/api/http';
 
 export function GameLobbyPage() {
@@ -18,7 +18,6 @@ export function GameLobbyPage() {
 
   // Setup Flow State
   const [mode, setMode] = useState<'BOT' | 'HUMAN'>('BOT');
-  const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('EASY');
   const [playerColor, setPlayerColor] = useState<Color>('WHITE');
   const [timeControl, setTimeControl] = useState('10+0');
   
@@ -70,7 +69,6 @@ export function GameLobbyPage() {
 
     gameApi.createGame({
       vsBot: true,
-      botDifficulty,
       playerColor,
       timeControl
     }, token)
@@ -173,23 +171,9 @@ export function GameLobbyPage() {
 
           {/* Opcje specyficzne dla Bota */}
           {mode === 'BOT' && (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ fontWeight: 'bold' }}>Trudność bota</label>
-                <select 
-                  value={botDifficulty} 
-                  onChange={(e) => setBotDifficulty(e.target.value as BotDifficulty)}
-                  className="field-input"
-                >
-                  <option value="EASY">Łatwy</option>
-                  <option value="MEDIUM">Średni</option>
-                  <option value="HARD">Trudny</option>
-                </select>
-              </div>
-              <Button onClick={handleCreateBotGame} disabled={loading} style={{ marginTop: '1rem' }}>
-                {loading ? 'Tworzenie gry...' : 'Graj'}
-              </Button>
-            </>
+            <Button onClick={handleCreateBotGame} disabled={loading} style={{ marginTop: '1rem' }}>
+              {loading ? 'Tworzenie gry...' : 'Graj'}
+            </Button>
           )}
 
           {/* Opcje specyficzne dla Znajomego */}
@@ -228,17 +212,21 @@ export function GameLobbyPage() {
       {authenticated && activeGames.length > 0 && (
         <Card title="Twoje trwające gry" className="span-2">
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {activeGames.map(game => (
-              <li key={game.id} style={{ padding: '0.5rem 0', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>
-                  <strong>Gra:</strong> {game.id.slice(0, 8)}... - <strong>Status:</strong> {game.status}
-                  {game.vsBot && <span className="muted" style={{ marginLeft: '1rem' }}>Z botem ({game.botDifficulty})</span>}
-                </span>
-                <Button onClick={() => navigate(`/play/${game.id}`)} variant="ghost">
-                  Wznów grę
-                </Button>
-              </li>
-            ))}
+            {activeGames.map(game => {
+              const opponent = game.vsBot ? 'Gra z komputerem' : 'Przeciwnik';
+              const label = game.status === 'WAITING_FOR_OPPONENT' ? 'Oczekuje na przeciwnika' : 'W toku';
+              return (
+                <li key={game.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid var(--border-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>
+                    <strong>{opponent}</strong>
+                    <span className="muted" style={{ marginLeft: '0.75rem' }}>{label}</span>
+                  </span>
+                  <Button onClick={() => navigate(`/play/${game.id}`)} variant="ghost">
+                    Wznów grę
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
         </Card>
       )}

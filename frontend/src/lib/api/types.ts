@@ -23,7 +23,9 @@ export interface PageResponse<T> {
 export interface Friendship {
   id: string;
   requesterId: string;
+  requesterNickname: string;
   addresseeId: string;
+  addresseeNickname: string;
   status: 'PENDING' | 'ACCEPTED' | 'BLOCKED';
   createdAt: string;
   updatedAt: string | null;
