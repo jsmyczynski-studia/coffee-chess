@@ -21,7 +21,7 @@ public class EngineClient {
     public String getBotMove(String fen, BotDifficulty difficulty) {
         try {
             EngineResponse response = engineRestClient.post()
-                    .uri("/move")
+                    .uri("")
                     .body(new EngineRequest(fen, difficulty.getDepth(), difficulty.getSkill()))
                     .retrieve()
                     .body(EngineResponse.class);

@@ -16,6 +16,7 @@ import pl.coffeechess.game.model.dto.ChatMessageDto;
 import pl.coffeechess.game.model.dto.CreateGameRequest;
 import pl.coffeechess.game.model.dto.GameDto;
 import pl.coffeechess.game.model.dto.GameUpdateDto;
+import pl.coffeechess.game.model.dto.MoveDto;
 import pl.coffeechess.game.model.dto.MoveRequest;
 import pl.coffeechess.game.model.dto.SendChatRequest;
 import pl.coffeechess.game.model.entity.Game;
@@ -52,6 +53,13 @@ public class GameController {
         Game game = gameRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Game doesn't exist"));
         return GameDto.from(game);
+    }
+
+    @GetMapping("/{id}/moves")
+    public List<MoveDto> getMoves(@PathVariable UUID id) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Game doesn't exist"));
+        return game.getMoves().stream().map(MoveDto::from).toList();
     }
 
     @GetMapping

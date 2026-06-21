@@ -13,7 +13,6 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByNickname(String nickname);
-    Optional<User> findByKeycloakId(String keycloakId);
     boolean existsByNickname(String nickname);
     boolean existsByEmail(String email);
     Page<User> findAllByOrderByEloRatingDesc(Pageable pageable);

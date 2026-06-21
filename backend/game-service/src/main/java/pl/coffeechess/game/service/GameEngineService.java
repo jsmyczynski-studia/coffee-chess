@@ -68,6 +68,33 @@ public class GameEngineService {
         return result.dto();
     }
 
+    @Transactional
+    public MoveResult processBotMove(UUID gameId, String moveUciRequest) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game doesn't exist"));
+
+        if (game.getStatus() != GameStatus.IN_PROGRESS) {
+            return null;
+        }
+
+        GameBoard board = new GameBoard(game.getCurrentFen());
+        Color activeColor = board.getActiveColor();
+
+        if (updateTimers(game, activeColor)) {
+            game.setEndedAt(LocalDateTime.now());
+            game.setUpdatedAt(LocalDateTime.now());
+            gameRepository.save(game);
+            kafkaProducer.publishGameCompletedEvent(game);
+            GameUpdateDto flagFallDto = toUpdateDto(game, null);
+            broadcast(game, flagFallDto);
+            return new MoveResult(flagFallDto, false, activeColor);
+        }
+
+        MoveResult result = applyMove(game, board, moveUciRequest, activeColor);
+        broadcast(game, result.dto());
+        return result;
+    }
+
     // stosuje zwalidowany ruch i zapisuje stan; używane przez gracza i bota
     MoveResult applyMove(Game game, GameBoard board, String moveUciRequest, Color activeColor) {
         if (moveUciRequest == null || moveUciRequest.length() < 4 || moveUciRequest.length() > 5) {
@@ -180,7 +207,7 @@ public class GameEngineService {
     }
 
     // odejmuje czas i sprawdza warunek przegranej na czas
-    private boolean updateTimers(Game game, Color activeColor) {
+    public boolean updateTimers(Game game, Color activeColor) {
         if (game.getUpdatedAt() == null) {
             return false;
         }
