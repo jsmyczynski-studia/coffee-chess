@@ -49,8 +49,8 @@ export async function apiRequest<T>(
     let message = response.statusText || 'Request failed';
 
     try {
-      const json = JSON.parse(body) as { message?: string; error?: string };
-      message = json.message ?? json.error ?? message;
+      const json = JSON.parse(body) as { message?: string; error?: string; detail?: string; title?: string };
+      message = json.message ?? json.detail ?? json.error ?? json.title ?? message;
     } catch {
       if (body) message = body;
     }

@@ -13,6 +13,12 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private final UserSyncFilter userSyncFilter;
+
+    public SecurityConfig(UserSyncFilter userSyncFilter) {
+        this.userSyncFilter = userSyncFilter;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -26,7 +32,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(jwt -> {}));
+                        oauth2.jwt(jwt -> {}))
+                .addFilterAfter(userSyncFilter, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
 
         return http.build();
     }

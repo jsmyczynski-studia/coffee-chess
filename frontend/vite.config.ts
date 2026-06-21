@@ -18,6 +18,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
         '/api/games': { target: env.VITE_DEV_GAME_URL ?? 'http://localhost:8082', changeOrigin: true },
+        '/ws': {
+          target: env.VITE_DEV_GAME_URL ?? 'http://localhost:8082',
+          ws: true,
+          changeOrigin: true
+        },
       },
     },
     preview: {

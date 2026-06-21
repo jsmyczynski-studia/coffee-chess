@@ -80,8 +80,14 @@ public class BotMoveService {
             return null;
         }
 
-        GameEngineService.MoveResult result = gameEngineService.applyMove(game, board, botMove, activeColor);
-        return new BotMoveOutcome(game, result, botMove);
+        GameEngineService.MoveResult result = gameEngineService.processBotMove(gameId, botMove);
+        if (result == null) {
+            return null;
+        }
+        
+        // Return an updated Game entity, we can just fetch it again since it was saved
+        Game updatedGame = gameRepository.findById(gameId).orElse(game);
+        return new BotMoveOutcome(updatedGame, result, botMove);
     }
 
     // czasem bot wrzuca zaczepny komentarz - po biciu lub losowo

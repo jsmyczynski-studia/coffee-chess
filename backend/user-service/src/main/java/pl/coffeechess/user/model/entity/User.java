@@ -15,11 +15,7 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
-    @Column(name = "keycloak_id", unique = true, nullable = false)
-    private String keycloakId;
 
     @Column(unique = true, nullable = false, length = 32)
     private String nickname;

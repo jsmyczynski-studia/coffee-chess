@@ -29,7 +29,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/coffee-chess
+          issuer-uri: http://localhost:8080/realms/coffee-chess
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/coffee-chess/protocol/openid-connect/certs
 
 server:
   port: 8081
