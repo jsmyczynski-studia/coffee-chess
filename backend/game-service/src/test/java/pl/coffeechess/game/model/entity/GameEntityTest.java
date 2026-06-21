@@ -7,7 +7,7 @@ import pl.coffeechess.game.model.enums.GameStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class GameEntityTest {
 
@@ -22,12 +22,11 @@ class GameEntityTest {
                 .startedAt(LocalDateTime.now())
                 .build();
 
-        assertEquals(GameStatus.IN_PROGRESS, game.getStatus());
-        assertNotNull(game.getCreatedAt());
-        assertNotNull(game.getMoves());
-        assertTrue(game.getMoves().isEmpty());
-        assertNull(game.getEndReason());
-        assertNull(game.getEndedAt());
+        assertThat(game.getStatus()).isEqualTo(GameStatus.IN_PROGRESS);
+        assertThat(game.getCreatedAt()).isNotNull();
+        assertThat(game.getMoves()).isNotNull().isEmpty();
+        assertThat(game.getEndReason()).isNull();
+        assertThat(game.getEndedAt()).isNull();
     }
 
     @Test
@@ -41,9 +40,9 @@ class GameEntityTest {
                 .startedAt(LocalDateTime.now())
                 .build();
 
-        assertNull(game.getUpdatedAt());
+        assertThat(game.getUpdatedAt()).isNull();
         game.preUpdate();
-        assertNotNull(game.getUpdatedAt());
+        assertThat(game.getUpdatedAt()).isNotNull();
     }
 
     @Test
@@ -69,7 +68,7 @@ class GameEntityTest {
 
         game.getMoves().add(move);
 
-        assertEquals(1, game.getMoves().size());
-        assertSame(game, game.getMoves().get(0).getGame());
+        assertThat(game.getMoves()).hasSize(1);
+        assertThat(game.getMoves().get(0).getGame()).isSameAs(game);
     }
 }

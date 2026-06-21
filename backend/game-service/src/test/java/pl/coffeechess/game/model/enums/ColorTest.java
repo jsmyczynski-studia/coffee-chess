@@ -2,24 +2,24 @@ package pl.coffeechess.game.model.enums;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ColorTest {
 
     @Test
     void oppositeOfWhiteIsBlack() {
-        assertEquals(Color.BLACK, Color.WHITE.opposite());
+        assertThat(Color.WHITE.opposite()).isEqualTo(Color.BLACK);
     }
 
     @Test
     void oppositeOfBlackIsWhite() {
-        assertEquals(Color.WHITE, Color.BLACK.opposite());
+        assertThat(Color.BLACK.opposite()).isEqualTo(Color.WHITE);
     }
 
     @Test
     void oppositeIsInvolution() {
-        for (Color c : Color.values()) {
-            assertEquals(c, c.opposite().opposite());
+        for (Color color : Color.values()) {
+            assertThat(color.opposite().opposite()).isEqualTo(color);
         }
     }
 }

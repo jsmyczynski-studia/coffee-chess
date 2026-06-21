@@ -1,6 +1,6 @@
-package pl.coffeechess.game;
+package pl.coffeechess.game.acceptance;
 
-import org.junit.jupiter.api.Test;
+import io.cucumber.spring.CucumberContextConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -8,15 +8,25 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import pl.coffeechess.game.client.EngineClient;
+import pl.coffeechess.game.client.LlmClient;
+import pl.coffeechess.game.kafka.GameCompletedProducer;
 
+@CucumberContextConfiguration
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(GameServiceApplicationTests.TestSecuritySupport.class)
-class GameServiceApplicationTests {
+@Import(CucumberSpringConfiguration.TestSecuritySupport.class)
+public class CucumberSpringConfiguration {
 
-    @Test
-    void contextLoads() {
-    }
+    @MockitoBean
+    EngineClient engineClient;
+
+    @MockitoBean
+    LlmClient llmClient;
+
+    @MockitoBean
+    GameCompletedProducer gameCompletedProducer;
 
     @TestConfiguration
     static class TestSecuritySupport {
