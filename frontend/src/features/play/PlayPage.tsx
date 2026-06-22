@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, type FormEvent } from 'react';
+import { useEffect, useState, useRef, useCallback, type CSSProperties, type FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { Chessboard } from 'react-chessboard';
 import { Client } from '@stomp/stompjs';
@@ -26,6 +26,8 @@ export function PlayPage() {
 
   // Click-to-move: first click selects a square, second click submits the move.
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [legalTargets, setLegalTargets] = useState<string[]>([]);
+  const selectionRequestRef = useRef(0);
 
   // The board position is always whatever the backend last told us. The backend is the
   // single source of truth for all chess logic and validation.
@@ -126,6 +128,38 @@ export function PlayPage() {
   const isParticipant = playerColor !== null;
   const isMyTurn = !!game && game.status === 'IN_PROGRESS' && game.turn === playerColor;
 
+  useEffect(() => {
+    selectionRequestRef.current += 1;
+    setSelectedSquare(null);
+    setLegalTargets([]);
+  }, [game?.currentFen, game?.status, game?.turn]);
+
+  const clearSelection = () => {
+    selectionRequestRef.current += 1;
+    setSelectedSquare(null);
+    setLegalTargets([]);
+  };
+
+  const selectPiece = (square: string) => {
+    if (!id || !token) return;
+    const requestId = selectionRequestRef.current + 1;
+    selectionRequestRef.current = requestId;
+    setSelectedSquare(square);
+    setLegalTargets([]);
+
+    gameApi.getLegalMoves(id, square, token)
+      .then((targets) => {
+        if (selectionRequestRef.current === requestId) {
+          setLegalTargets(targets);
+        }
+      })
+      .catch(() => {
+        if (selectionRequestRef.current === requestId) {
+          setLegalTargets([]);
+        }
+      });
+  };
+
   const submitMove = useCallback(async (from: string, to: string) => {
     if (!id || !token || !game) return;
 
@@ -161,12 +195,12 @@ export function PlayPage() {
       if (!piece) return;
       const isWhitePiece = piece.pieceType.startsWith('w');
       if ((playerColor === 'WHITE') !== isWhitePiece) return;
-      setSelectedSquare(square);
+      selectPiece(square);
       return;
     }
 
     if (square === selectedSquare) {
-      setSelectedSquare(null);
+      clearSelection();
       return;
     }
 
@@ -174,27 +208,36 @@ export function PlayPage() {
     if (piece) {
       const isWhitePiece = piece.pieceType.startsWith('w');
       if ((playerColor === 'WHITE') === isWhitePiece) {
-        setSelectedSquare(square);
+        selectPiece(square);
         return;
       }
     }
 
     const from = selectedSquare;
-    setSelectedSquare(null);
-    void submitMove(from, square);
+    const isLegalTarget = legalTargets.includes(square);
+    clearSelection();
+    if (isLegalTarget) {
+      void submitMove(from, square);
+    }
   };
 
   // Drag still works as a convenience, routed through the same submit path.
   const onPieceDrop = ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
     if (!isMyTurn || !targetSquare) return false;
-    setSelectedSquare(null);
+    clearSelection();
     void submitMove(sourceSquare, targetSquare);
     return false;
   };
 
-  const squareStyles = selectedSquare
-    ? { [selectedSquare]: { background: 'rgba(255, 213, 79, 0.5)' } }
-    : {};
+  const squareStyles: Record<string, CSSProperties> = {};
+  if (selectedSquare) {
+    squareStyles[selectedSquare] = { background: 'rgba(255, 213, 79, 0.55)' };
+  }
+  for (const target of legalTargets) {
+    squareStyles[target] = {
+      background: 'radial-gradient(circle, rgba(30, 150, 80, 0.8) 0 18%, transparent 20%)',
+    };
+  }
 
   // --- Game actions ---
 

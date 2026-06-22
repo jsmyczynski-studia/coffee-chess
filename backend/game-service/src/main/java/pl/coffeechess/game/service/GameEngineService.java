@@ -22,6 +22,8 @@ import pl.coffeechess.game.repository.MoveRepository;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -66,6 +68,39 @@ public class GameEngineService {
         MoveResult result = applyMove(game, board, moveUciRequest, activeColor);
         broadcast(game, result.dto());
         return result.dto();
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getLegalDestinations(UUID gameId, UUID playerId, String fromSquare) {
+        if (fromSquare == null || !fromSquare.matches("^[a-h][1-8]$")) {
+            throw new IllegalArgumentException("Invalid source square.");
+        }
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game doesn't exist"));
+        if (game.getStatus() != GameStatus.IN_PROGRESS) {
+            return List.of();
+        }
+
+        GameBoard board = new GameBoard(game.getCurrentFen());
+        Color activeColor = board.getActiveColor();
+        verifyPlayerTurn(game, playerId, activeColor);
+
+        Piece piece = board.getPieceAt(fromSquare);
+        if (piece == null || piece.getColor() != activeColor) {
+            return List.of();
+        }
+
+        List<String> destinations = new ArrayList<>();
+        for (char file = 'a'; file <= 'h'; file++) {
+            for (char rank = '1'; rank <= '8'; rank++) {
+                String target = "" + file + rank;
+                if (MoveValidator.isSafeLegalMove(board, fromSquare, target)) {
+                    destinations.add(target);
+                }
+            }
+        }
+        return List.copyOf(destinations);
     }
 
     @Transactional
@@ -252,8 +287,8 @@ public class GameEngineService {
             return "";
         }
         String[] parts = fen.split(" ");
-        if (parts.length >= 2) {
-            return parts[0] + " " + parts[1];
+        if (parts.length >= 4) {
+            return parts[0] + " " + parts[1] + " " + parts[2] + " " + parts[3];
         }
         return fen;
     }

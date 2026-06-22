@@ -2,12 +2,15 @@
   "realm": "coffee-chess",
   "enabled": true,
   "sslRequired": "external",
-  "registrationAllowed": false,
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
+  "rememberMe": true,
+  "passwordPolicy": "length(10) and upperCase(1) and lowerCase(1) and digits(1)",
   "clients": [
     {
       "clientId": "coffee-chess-frontend",
@@ -15,7 +18,7 @@
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "redirectUris": [
         "http://localhost:3000/*",
         "http://localhost:5173/*"
@@ -30,7 +33,7 @@
       "name": "User Service Admin",
       "enabled": true,
       "publicClient": false,
-      "secret": "user-service-admin-secret",
+      "secret": "${KEYCLOAK_ADMIN_CLIENT_SECRET}",
       "serviceAccountsEnabled": true,
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
@@ -38,48 +41,6 @@
     }
   ],
   "users": [
-    {
-      "id": "11111111-1111-1111-1111-111111111111",
-      "username": "a",
-      "email": "a@test.cc",
-      "emailVerified": true,
-      "enabled": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "a",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "id": "22222222-2222-2222-2222-222222222222",
-      "username": "b",
-      "email": "b@test.cc",
-      "emailVerified": true,
-      "enabled": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "b",
-          "temporary": false
-        }
-      ]
-    },
-    {
-      "id": "33333333-3333-3333-3333-333333333333",
-      "username": "c",
-      "email": "c@test.cc",
-      "emailVerified": true,
-      "enabled": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "c",
-          "temporary": false
-        }
-      ]
-    },
     {
       "username": "service-account-user-service-admin",
       "enabled": true,

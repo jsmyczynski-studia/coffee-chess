@@ -22,6 +22,7 @@ import pl.coffeechess.game.model.dto.SendChatRequest;
 import pl.coffeechess.game.model.entity.Game;
 import pl.coffeechess.game.repository.GameRepository;
 import pl.coffeechess.game.service.BotMoveService;
+import pl.coffeechess.game.service.BotCommentService;
 import pl.coffeechess.game.service.ChatService;
 import pl.coffeechess.game.service.GameEngineService;
 import pl.coffeechess.game.service.GameManagementService;
@@ -37,6 +38,7 @@ public class GameController {
     private final GameManagementService gameManagementService;
     private final GameEngineService gameEngineService;
     private final BotMoveService botMoveService;
+    private final BotCommentService botCommentService;
     private final ChatService chatService;
     private final GameRepository gameRepository;
 
@@ -66,6 +68,13 @@ public class GameController {
         return game.getMoves().stream().map(MoveDto::from).toList();
     }
 
+    @GetMapping("/{id}/legal-moves")
+    public List<String> getLegalMoves(@PathVariable UUID id,
+                                      @RequestParam String from,
+                                      @AuthenticationPrincipal Jwt jwt) {
+        return gameEngineService.getLegalDestinations(id, subjectAsUuid(jwt), from);
+    }
+
     @GetMapping
     public List<GameDto> listGames(@RequestParam(required = false) UUID userId,
                                    @AuthenticationPrincipal Jwt jwt) {
@@ -84,7 +93,22 @@ public class GameController {
         if (request == null || request.move() == null || request.move().isBlank()) {
             throw new IllegalArgumentException("Invalid move format");
         }
-        gameEngineService.processMove(id, subjectAsUuid(jwt), request.move());
+        Game gameBeforeMove = gameRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Game doesn't exist"));
+        String fenBeforeMove = gameBeforeMove.getCurrentFen();
+        boolean vsBot = gameBeforeMove.isVsBot();
+        var botColor = gameBeforeMove.getBotColor();
+        var botDifficulty = gameBeforeMove.getBotDifficulty();
+        UUID playerId = subjectAsUuid(jwt);
+        gameEngineService.processMove(id, playerId, request.move());
+        if (vsBot) {
+            botCommentService.commentOnPlayerMove(
+                    id,
+                    fenBeforeMove,
+                    request.move(),
+                    botColor.opposite(),
+                    botDifficulty);
+        }
         // po ruchu człowieka bot odpowiada automatycznie
         botMoveService.playBotTurnIfNeeded(id);
         // Zwracamy najnowszy stan gry (po ewentualnym ruchu bota), aby klient nie musiał
@@ -104,7 +128,13 @@ public class GameController {
                                    @RequestBody SendChatRequest request,
                                    @AuthenticationPrincipal Jwt jwt) {
         String text = request == null ? null : request.text();
-        return chatService.sendUserMessage(id, subjectAsUuid(jwt), text);
+        ChatMessageDto message = chatService.sendUserMessage(id, subjectAsUuid(jwt), text);
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Game doesn't exist"));
+        if (game.isVsBot()) {
+            botCommentService.replyToPlayerMessage(id, message.text());
+        }
+        return message;
     }
 
     @PostMapping("/{id}/resign")

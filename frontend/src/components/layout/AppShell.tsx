@@ -19,7 +19,7 @@ const navItems: NavItem[] = [
 ];
 
 export function AppShell() {
-  const { authenticated, user, login, logout } = useAuth();
+  const { authenticated, user, login, register, logout } = useAuth();
 
   return (
     <div className="app-shell">
@@ -62,9 +62,14 @@ export function AppShell() {
               </Button>
             </>
           ) : (
-            <Button variant="primary" onClick={() => login()}>
-              Zaloguj się
-            </Button>
+            <>
+              <Button variant="primary" onClick={() => login()}>
+                Zaloguj się
+              </Button>
+              <Button variant="ghost" onClick={() => register()}>
+                Zarejestruj się
+              </Button>
+            </>
           )}
         </div>
       </aside>

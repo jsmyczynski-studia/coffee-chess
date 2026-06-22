@@ -3,7 +3,6 @@ package pl.coffeechess.game.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.coffeechess.game.client.EngineClient;
@@ -14,7 +13,6 @@ import pl.coffeechess.game.model.enums.GameStatus;
 import pl.coffeechess.game.repository.GameRepository;
 
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 // prowadzi ruch bota po ruchu człowieka
 @Slf4j
@@ -29,17 +27,7 @@ public class BotMoveService {
     @Autowired(required = false)
     private GameUpdateBroadcaster broadcaster;
 
-    @Autowired(required = false)
-    private TrashTalkService trashTalkService;
-
-    @Autowired(required = false)
-    private ChatService chatService;
-
-    @Value("${bot.trash-talk.enabled:true}")
-    private boolean trashTalkEnabled;
-
-    @Value("${bot.trash-talk.probability:0.4}")
-    private double trashTalkProbability;
+    private final BotCommentService botCommentService;
 
     // jeśli to tura bota, pobiera ruch z silnika i go stosuje
     public void playBotTurnIfNeeded(UUID gameId) {
@@ -51,7 +39,8 @@ public class BotMoveService {
             if (broadcaster != null) {
                 broadcaster.broadcast(outcome.game(), outcome.dto().dto());
             }
-            maybeTrashTalk(outcome);
+            botCommentService.commentOnBotMove(
+                    outcome.game().getId(), outcome.move(), outcome.dto().capture());
         } catch (Exception e) {
             // wolne lub błędne wywołanie silnika nie może psuć stanu gry
             log.error("bot turn failed for game {}: {}", gameId, e.getMessage());
@@ -88,34 +77,6 @@ public class BotMoveService {
         // Return an updated Game entity, we can just fetch it again since it was saved
         Game updatedGame = gameRepository.findById(gameId).orElse(game);
         return new BotMoveOutcome(updatedGame, result, botMove);
-    }
-
-    // czasem bot wrzuca zaczepny komentarz - po biciu lub losowo
-    private void maybeTrashTalk(BotMoveOutcome outcome) {
-        if (!trashTalkEnabled || trashTalkService == null || chatService == null) {
-            return;
-        }
-        boolean trigger = outcome.dto().capture()
-                || ThreadLocalRandom.current().nextDouble() < trashTalkProbability;
-        if (!trigger) {
-            return;
-        }
-        try {
-            String context = buildContext(outcome);
-            String remark = trashTalkService.generateRemark(context);
-            if (remark != null && !remark.isBlank()) {
-                chatService.postBotMessage(outcome.game().getId(), remark);
-            }
-        } catch (Exception e) {
-            // błąd LLM nigdy nie może blokować ani psuć ruchu
-            log.error("trash talk failed for game {}: {}", outcome.game().getId(), e.getMessage());
-        }
-    }
-
-    private String buildContext(BotMoveOutcome outcome) {
-        String captured = outcome.dto().capture() ? " and captured a piece" : "";
-        return "the bot just played " + outcome.move() + captured
-                + " against its opponent give a short trash talk remark";
     }
 
     public record BotMoveOutcome(Game game, GameEngineService.MoveResult dto, String move) { }

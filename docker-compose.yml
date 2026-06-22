@@ -87,6 +87,24 @@ services:
       retries: 10
     restart: unless-stopped
 
+  postgres-keycloak:
+    image: postgres:16-alpine
+    container_name: cc-postgres-keycloak
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: ${KEYCLOAK_DB_USER:-keycloak}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-changeMeLocally123}
+    volumes:
+      - postgres-keycloak-data:/var/lib/postgresql/data
+    networks:
+      - coffee-chess-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USER:-keycloak} -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   kafka:
     image: apache/kafka:4.1.0
     container_name: cc-kafka
@@ -123,6 +141,16 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres-keycloak
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-changeMeLocally123}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-changeMeAdminClientSecret123}
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
     volumes:
       - ./infra/keycloak/coffee-chess-realm.json:/opt/keycloak/data/import/coffee-chess-realm.json:ro
     networks:
@@ -148,7 +176,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       KAFKA_HOST: kafka
       KEYCLOAK_HOST: keycloak
-      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-user-service-admin-secret}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-changeMeAdminClientSecret123}
     depends_on:
       config-server:
         condition: service_healthy
@@ -187,6 +215,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       KAFKA_HOST: kafka
       KEYCLOAK_HOST: keycloak
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.groq.com/openai/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-openai/gpt-oss-20b}
+      BOT_TRASH_TALK_ENABLED: ${BOT_TRASH_TALK_ENABLED:-true}
+      BOT_TRASH_TALK_PROBABILITY: ${BOT_TRASH_TALK_PROBABILITY:-0.4}
     depends_on:
       config-server:
         condition: service_healthy
@@ -271,3 +304,4 @@ networks:
 volumes:
   postgres-user-data:
   postgres-game-data:
+  postgres-keycloak-data:

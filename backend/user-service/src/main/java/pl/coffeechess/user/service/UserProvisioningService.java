@@ -68,6 +68,29 @@ public class UserProvisioningService {
         });
     }
 
+    /**
+     * Resolve a Keycloak subject to an application profile. This covers asynchronous
+     * flows (for example a Kafka game-completed event) that do not carry the user's JWT.
+     */
+    @Transactional
+    public Optional<User> resolveById(UUID userId) {
+        Optional<User> local = userRepository.findById(userId);
+        if (local.isPresent()) {
+            return local;
+        }
+
+        return keycloakAdminClient.findById(userId.toString()).map(kcUser -> {
+            String nickname = kcUser.username() != null
+                    ? kcUser.username()
+                    : "user_" + userId.toString().substring(0, 8);
+            String email = kcUser.email() != null
+                    ? kcUser.email()
+                    : nickname + "@example.com";
+            log.info("Provisioning user '{}' ({}) from Keycloak by subject", nickname, userId);
+            return saveProvisioned(userId, nickname, email);
+        });
+    }
+
     private User saveProvisioned(UUID userId, String nickname, String email) {
         try {
             User newUser = User.builder()

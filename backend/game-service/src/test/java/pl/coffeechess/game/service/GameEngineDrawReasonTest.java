@@ -94,7 +94,8 @@ class GameEngineDrawReasonTest {
     @Test
     void applyMove_labelsThreefoldRepetitionDraw() {
         game.setCurrentFen("8/8/8/8/8/8/4K2R/7k w - - 0 1");
-        game.setPositionHistory("8/8/8/8/8/7R/4K3/7k b;8/8/8/8/8/7R/4K3/7k b");
+        game.setPositionHistory(
+                "8/8/8/8/8/7R/4K3/7k b - -;8/8/8/8/8/7R/4K3/7k b - -");
 
         gameEngineService.applyMove(game, new GameBoard(game.getCurrentFen()), "h2h3", Color.WHITE);
 

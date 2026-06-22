@@ -23,6 +23,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   token: string | undefined;
   login: () => Promise<void>;
+  register: () => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
 }
@@ -92,6 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await keycloak.login({ redirectUri: window.location.href });
   }, []);
 
+  const register = useCallback(async () => {
+    await keycloak.register({ redirectUri: window.location.href });
+  }, []);
+
   const logout = useCallback(async () => {
     await keycloak.logout({ redirectUri: window.location.origin });
   }, []);
@@ -114,10 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       token: keycloak.token,
       login,
+      register,
       logout,
       refreshToken,
     }),
-    [ready, authenticated, user, login, logout, refreshToken],
+    [ready, authenticated, user, login, register, logout, refreshToken],
   );
 
   if (!ready) {

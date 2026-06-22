@@ -10,6 +10,7 @@ import pl.coffeechess.user.repository.EloHistoryRepository;
 import pl.coffeechess.user.repository.GameHistoryRepository;
 import pl.coffeechess.user.repository.UserRepository;
 import pl.coffeechess.user.service.EloService;
+import pl.coffeechess.user.service.UserProvisioningService;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +31,8 @@ class GameCompletedConsumerTest {
     private GameHistoryRepository gameHistoryRepository;
     @Mock
     private EloService eloService;
+    @Mock
+    private UserProvisioningService userProvisioningService;
 
     @InjectMocks
     private GameCompletedConsumer consumer;
@@ -62,8 +65,8 @@ class GameCompletedConsumerTest {
         User white = User.builder().id(whiteId).eloRating(1200).gamesPlayed(0).build();
         User black = User.builder().id(blackId).eloRating(1200).gamesPlayed(0).build();
 
-        when(userRepository.findById(whiteId)).thenReturn(Optional.of(white));
-        when(userRepository.findById(blackId)).thenReturn(Optional.of(black));
+        when(userProvisioningService.resolveById(whiteId)).thenReturn(Optional.of(white));
+        when(userProvisioningService.resolveById(blackId)).thenReturn(Optional.of(black));
         when(eloService.calculateEloChange(1200, 1200, 1.0)).thenReturn(16);
         when(eloService.calculateEloChange(1200, 1200, 0.0)).thenReturn(-16);
 

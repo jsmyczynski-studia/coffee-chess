@@ -11,6 +11,7 @@ import pl.coffeechess.user.repository.EloHistoryRepository;
 import pl.coffeechess.user.repository.GameHistoryRepository;
 import pl.coffeechess.user.repository.UserRepository;
 import pl.coffeechess.user.service.EloService;
+import pl.coffeechess.user.service.UserProvisioningService;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -24,6 +25,7 @@ public class GameCompletedConsumer {
     private final EloHistoryRepository eloHistoryRepository;
     private final GameHistoryRepository gameHistoryRepository;
     private final EloService eloService;
+    private final UserProvisioningService userProvisioningService;
 
     @KafkaListener(topics = "game-completed", groupId = "user-service-group")
     public void onGameCompleted(GameCompletedEvent event) {
@@ -43,8 +45,10 @@ public class GameCompletedConsumer {
             return;
         }
 
-        User white = userRepository.findById(whitePlayerId).orElseThrow();
-        User black = userRepository.findById(blackPlayerId).orElseThrow();
+        User white = userProvisioningService.resolveById(whitePlayerId)
+                .orElseThrow(() -> new IllegalStateException("White player does not exist in Keycloak: " + whitePlayerId));
+        User black = userProvisioningService.resolveById(blackPlayerId)
+                .orElseThrow(() -> new IllegalStateException("Black player does not exist in Keycloak: " + blackPlayerId));
 
         double whiteScore = switch (event.outcome()) {
             case "WHITE_WINS" -> 1.0;
