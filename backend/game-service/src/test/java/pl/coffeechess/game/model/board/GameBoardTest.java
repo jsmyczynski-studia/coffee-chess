@@ -146,6 +146,35 @@ class GameBoardTest {
     }
 
     @Test
+    void castlingMovesKingAndRookAndRemovesCastlingRights() {
+        GameBoard board = new GameBoard("4k3/8/8/8/8/8/8/4K2R w K - 0 1");
+
+        board.movePiece("e1", "g1");
+
+        assertPiece(board.getPieceAt("g1"), PieceType.KING, Color.WHITE);
+        assertPiece(board.getPieceAt("f1"), PieceType.ROOK, Color.WHITE);
+        assertThat(board.isEmpty("e1")).isTrue();
+        assertThat(board.isEmpty("h1")).isTrue();
+        assertThat(board.toFen()).contains(" w - - ");
+    }
+
+    @Test
+    void fenPreservesCastlingRights() {
+        GameBoard board = new GameBoard("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+
+        assertThat(board.toFen()).isEqualTo("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+    }
+
+    @Test
+    void movingRookRemovesOnlyItsCastlingRight() {
+        GameBoard board = new GameBoard("4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+
+        board.movePiece("h1", "h2");
+
+        assertThat(board.getCastlingRights()).isEqualTo("Q");
+    }
+
+    @Test
     void moveCannotCaptureOwnPiece() {
         GameBoard board = GameBoard.empty();
         board.placePiece("a1", new Rook(Color.WHITE));

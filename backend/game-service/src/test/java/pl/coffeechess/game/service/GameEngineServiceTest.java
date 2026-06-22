@@ -15,8 +15,9 @@ import pl.coffeechess.game.repository.GameRepository;
 import pl.coffeechess.game.repository.MoveRepository;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.Optional;
+import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -115,7 +116,7 @@ class GameEngineServiceTest {
     }
 
     @Test
-    void shouldPromotePawnToQueen() {
+    void shouldPromotePawnToQueen() {
         String fenBeforePromotion = "8/3P4/8/8/8/8/8/8 w - - 0 1";
         game.setCurrentFen(fenBeforePromotion);
         when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
@@ -124,6 +125,30 @@ class GameEngineServiceTest {
         GameUpdateDto result = gameEngineService.processMove(gameId, whitePlayerId, "d7d8q");
 
         assertThat(result.fen()).contains("Q").doesNotContain("P");
-        assertThat(result.lastMove()).isEqualTo("d7d8q");
-    }
-}
+        assertThat(result.lastMove()).isEqualTo("d7d8q");
+    }
+
+    @Test
+    void shouldCastleAndPersistKingAndRookPositions() {
+        game.setCurrentFen("4k3/8/8/8/8/8/8/4K2R w K - 0 1");
+        when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+        when(moveRepository.save(any(Move.class))).thenReturn(new Move());
+
+        GameUpdateDto result = gameEngineService.processMove(gameId, whitePlayerId, "e1g1");
+
+        assertThat(result.fen()).startsWith("4k3/8/8/8/8/8/8/5RK1 b -");
+        assertThat(result.lastMove()).isEqualTo("e1g1");
+        verify(gameRepository).save(game);
+        verify(moveRepository).save(any(Move.class));
+    }
+
+    @Test
+    void shouldReturnLegalDestinationsIncludingCastling() {
+        game.setCurrentFen("4k3/8/8/8/8/8/8/4K2R w K - 0 1");
+        when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+
+        List<String> destinations = gameEngineService.getLegalDestinations(gameId, whitePlayerId, "e1");
+
+        assertThat(destinations).contains("d1", "d2", "e2", "f1", "f2", "g1");
+    }
+}

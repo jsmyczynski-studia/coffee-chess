@@ -10,6 +10,15 @@ export const gameApi = {
     return apiRequest<MoveDto[]>('game', `/api/games/${id}/moves`, {}, token);
   },
 
+  getLegalMoves(id: string, from: string, token: string) {
+    return apiRequest<string[]>(
+      'game',
+      `/api/games/${id}/legal-moves?from=${encodeURIComponent(from)}`,
+      {},
+      token,
+    );
+  },
+
   createGame(request: CreateGameRequest, token: string) {
     return apiRequest<GameDto>(
       'game',

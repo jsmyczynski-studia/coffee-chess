@@ -101,6 +101,36 @@ class MoveValidatorTest {
     }
 
     @Test
+    void shouldAllowKingSideAndQueenSideCastling() {
+        GameBoard board = new GameBoard("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+
+        assertThat(MoveValidator.isSafeLegalMove(board, "e1", "g1")).isTrue();
+        assertThat(MoveValidator.isSafeLegalMove(board, "e1", "c1")).isTrue();
+
+        board.setActiveColor(Color.BLACK);
+        assertThat(MoveValidator.isSafeLegalMove(board, "e8", "g8")).isTrue();
+        assertThat(MoveValidator.isSafeLegalMove(board, "e8", "c8")).isTrue();
+    }
+
+    @Test
+    void shouldRejectCastlingWithoutRightsOrWithBlockedPath() {
+        GameBoard noRights = new GameBoard("4k3/8/8/8/8/8/8/4K2R w - - 0 1");
+        GameBoard blocked = new GameBoard("4k3/8/8/8/8/8/8/4KB1R w K - 0 1");
+
+        assertThat(MoveValidator.isSafeLegalMove(noRights, "e1", "g1")).isFalse();
+        assertThat(MoveValidator.isSafeLegalMove(blocked, "e1", "g1")).isFalse();
+    }
+
+    @Test
+    void shouldRejectCastlingOutOfCheckOrThroughAttackedSquare() {
+        GameBoard inCheck = new GameBoard("k3r3/8/8/8/8/8/8/4K2R w K - 0 1");
+        GameBoard throughCheck = new GameBoard("k4r2/8/8/8/8/8/8/4K2R w K - 0 1");
+
+        assertThat(MoveValidator.isSafeLegalMove(inCheck, "e1", "g1")).isFalse();
+        assertThat(MoveValidator.isSafeLegalMove(throughCheck, "e1", "g1")).isFalse();
+    }
+
+    @Test
     void moveCannotCaptureOwnPiece() {
         GameBoard board = GameBoard.empty();
         board.placePiece("a1", new Rook(Color.WHITE));

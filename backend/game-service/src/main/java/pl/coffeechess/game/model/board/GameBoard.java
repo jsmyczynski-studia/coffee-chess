@@ -22,6 +22,8 @@ public class GameBoard {
 
     private Color activeColor = Color.WHITE;
 
+    private String castlingRights = "-";
+
     public GameBoard(String fen) {
         this.squares = new Piece[BOARD_SIZE][BOARD_SIZE];
         loadFromFen(fen);
@@ -37,6 +39,7 @@ public class GameBoard {
 
     public static GameBoard standardSetup() {
         GameBoard board = new GameBoard();
+        board.castlingRights = "KQkq";
         board.setupBackRank(Color.BLACK, 0);
         board.setupPawns(Color.BLACK, 1);
         board.setupPawns(Color.WHITE, 6);
@@ -79,8 +82,14 @@ public class GameBoard {
         Piece piece = squares[source[0]][source[1]];
         Piece targetPiece = squares[target[0]][target[1]];
 
+        updateCastlingRights(piece, from, targetPiece, to);
+
         squares[target[0]][target[1]] = piece;
         squares[source[0]][source[1]] = null;
+
+        if (piece instanceof King && Math.abs(target[1] - source[1]) == 2) {
+            moveRookForCastling(source[0], target[1]);
+        }
         return targetPiece;
     }
 
@@ -152,7 +161,12 @@ public class GameBoard {
         int[] source = parseSquare(from);
         int[] target = parseSquare(to);
 
-        squares[source[0]][source[1]] = squares[target[0]][target[1]];
+        Piece movedPiece = squares[target[0]][target[1]];
+        if (movedPiece instanceof King && Math.abs(target[1] - source[1]) == 2) {
+            undoRookCastling(source[0], target[1]);
+        }
+
+        squares[source[0]][source[1]] = movedPiece;
         squares[target[0]][target[1]] = capturedPiece;
     }
 
@@ -185,7 +199,7 @@ public class GameBoard {
             }
         }
         this.activeColor = parts[1].equals("w") ? Color.WHITE : Color.BLACK;
-        //TODO en passant, roszady itp
+        this.castlingRights = parts.length >= 3 && !parts[2].isBlank() ? parts[2] : "-";
     }
 
     public String toFen() {
@@ -209,9 +223,57 @@ public class GameBoard {
         }
 
         sb.append(activeColor == Color.WHITE ? " w" : " b");
-        sb.append(" - - 0 1");
-        //TODO en passant, roszady itp
+        sb.append(" ").append(castlingRights.isBlank() ? "-" : castlingRights);
+        sb.append(" - 0 1");
         return sb.toString();
+    }
+
+    public boolean hasCastlingRight(char right) {
+        return castlingRights.indexOf(right) >= 0;
+    }
+
+    private void moveRookForCastling(int row, int kingTargetColumn) {
+        int rookSourceColumn = kingTargetColumn == 6 ? 7 : 0;
+        int rookTargetColumn = kingTargetColumn == 6 ? 5 : 3;
+        squares[row][rookTargetColumn] = squares[row][rookSourceColumn];
+        squares[row][rookSourceColumn] = null;
+    }
+
+    private void undoRookCastling(int row, int kingTargetColumn) {
+        int rookSourceColumn = kingTargetColumn == 6 ? 7 : 0;
+        int rookTargetColumn = kingTargetColumn == 6 ? 5 : 3;
+        squares[row][rookSourceColumn] = squares[row][rookTargetColumn];
+        squares[row][rookTargetColumn] = null;
+    }
+
+    private void updateCastlingRights(Piece movingPiece, String from, Piece capturedPiece, String to) {
+        if (movingPiece instanceof King) {
+            removeCastlingRights(movingPiece.getColor() == Color.WHITE ? "KQ" : "kq");
+        } else if (movingPiece instanceof Rook) {
+            removeRookCastlingRight(from);
+        }
+
+        if (capturedPiece instanceof Rook) {
+            removeRookCastlingRight(to);
+        }
+    }
+
+    private void removeRookCastlingRight(String square) {
+        switch (square) {
+            case "a1" -> removeCastlingRights("Q");
+            case "h1" -> removeCastlingRights("K");
+            case "a8" -> removeCastlingRights("q");
+            case "h8" -> removeCastlingRights("k");
+            default -> { }
+        }
+    }
+
+    private void removeCastlingRights(String rightsToRemove) {
+        String updated = castlingRights;
+        for (char right : rightsToRemove.toCharArray()) {
+            updated = updated.replace(String.valueOf(right), "");
+        }
+        castlingRights = updated.isEmpty() ? "-" : updated;
     }
 
     public void promotePiece(String square, PieceType promotionType, Color color) {

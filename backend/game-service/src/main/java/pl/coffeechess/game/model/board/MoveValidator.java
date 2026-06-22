@@ -33,6 +33,11 @@ public final class MoveValidator {
         int targetColumn = board.getColumn(to);
         boolean targetOccupied = targetPiece != null;
 
+        if (piece instanceof King && sourceRow == targetRow
+                && Math.abs(targetColumn - sourceColumn) == 2) {
+            return isCastlingLegal(board, from, to, piece.getColor());
+        }
+
         if (!piece.canMove(sourceRow, sourceColumn, targetRow, targetColumn, targetOccupied)) {
             return false;
         }
@@ -61,9 +66,11 @@ public final class MoveValidator {
             return false;
         }
 
+        String castlingRights = board.getCastlingRights();
         Piece capturedPiece = board.movePiece(from, to);
         boolean isKingSafe = !isKingInCheck(board, pieceToMove.getColor());
         board.undoMove(from, to, capturedPiece);
+        board.setCastlingRights(castlingRights);
 
         return isKingSafe;
     }
@@ -72,15 +79,66 @@ public final class MoveValidator {
         String kingPos = findKingPosition(board, kingColor);
         if (kingPos == null) return false;
 
+        return isSquareAttacked(board, kingPos, kingColor.opposite());
+    }
+
+    private static boolean isCastlingLegal(GameBoard board, String from, String to, Color color) {
+        String expectedFrom = color == Color.WHITE ? "e1" : "e8";
+        String kingSideTarget = color == Color.WHITE ? "g1" : "g8";
+        String queenSideTarget = color == Color.WHITE ? "c1" : "c8";
+        if (!from.equals(expectedFrom) || (!to.equals(kingSideTarget) && !to.equals(queenSideTarget))) {
+            return false;
+        }
+
+        boolean kingSide = to.equals(kingSideTarget);
+        char requiredRight = color == Color.WHITE
+                ? (kingSide ? 'K' : 'Q')
+                : (kingSide ? 'k' : 'q');
+        if (!board.hasCastlingRight(requiredRight)) {
+            return false;
+        }
+
+        String rookSquare = color == Color.WHITE
+                ? (kingSide ? "h1" : "a1")
+                : (kingSide ? "h8" : "a8");
+        Piece rook = board.getPieceAt(rookSquare);
+        if (rook == null || rook.getType() != PieceType.ROOK || rook.getColor() != color) {
+            return false;
+        }
+
+        String rank = color == Color.WHITE ? "1" : "8";
+        String[] emptySquares = kingSide
+                ? new String[]{"f" + rank, "g" + rank}
+                : new String[]{"d" + rank, "c" + rank, "b" + rank};
+        for (String square : emptySquares) {
+            if (!board.isEmpty(square)) {
+                return false;
+            }
+        }
+
+        Color opponent = color.opposite();
+        String transitSquare = (kingSide ? "f" : "d") + rank;
+        return !isSquareAttacked(board, from, opponent)
+                && !isSquareAttacked(board, transitSquare, opponent)
+                && !isSquareAttacked(board, to, opponent);
+    }
+
+    private static boolean isSquareAttacked(GameBoard board, String square, Color attackerColor) {
+        int targetRow = board.getRow(square);
+        int targetColumn = board.getColumn(square);
+
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
                 String oppPos = toSquareString(row, col);
                 Piece piece = board.getPieceAt(oppPos);
 
-                if (piece != null && piece.getColor() != kingColor) {
-                    if (isMoveLegal(board, oppPos, kingPos)) {
-                        return true;
-                    }
+                if (piece == null || piece.getColor() != attackerColor) {
+                    continue;
+                }
+
+                if (piece.canMove(row, col, targetRow, targetColumn, true)
+                        && (!requiresClearPath(piece, row, targetRow) || board.isPathClear(oppPos, square))) {
+                    return true;
                 }
             }
         }

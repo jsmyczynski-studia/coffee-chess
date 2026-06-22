@@ -66,6 +66,13 @@ public class GameController {
         return game.getMoves().stream().map(MoveDto::from).toList();
     }
 
+    @GetMapping("/{id}/legal-moves")
+    public List<String> getLegalMoves(@PathVariable UUID id,
+                                      @RequestParam String from,
+                                      @AuthenticationPrincipal Jwt jwt) {
+        return gameEngineService.getLegalDestinations(id, subjectAsUuid(jwt), from);
+    }
+
     @GetMapping
     public List<GameDto> listGames(@RequestParam(required = false) UUID userId,
                                    @AuthenticationPrincipal Jwt jwt) {
