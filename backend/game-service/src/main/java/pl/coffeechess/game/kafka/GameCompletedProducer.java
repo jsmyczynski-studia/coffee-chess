@@ -5,7 +5,10 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import pl.coffeechess.game.model.entity.Game;
 import pl.coffeechess.game.model.enums.GameStatus;
+import lombok.extern.slf4j.Slf4j;
 
+
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class GameCompletedProducer {
@@ -32,6 +35,22 @@ public class GameCompletedProducer {
                 game.getEndReason() == null ? null : game.getEndReason().name()
         );
 
-        kafkaTemplate.send(TOPIC_NAME, game.getId().toString(), payload);
+        kafkaTemplate.send(TOPIC_NAME, game.getId().toString(), payload)
+        .whenComplete((result, exception) -> {
+            if (exception != null) {
+                log.error(
+                        "Could not publish game-completed event for gameId={}",
+                        game.getId(),
+                        exception
+                );
+                return;
+            }
+
+            log.info(
+                    "Published game-completed event for gameId={} to topic={}",
+                    game.getId(),
+                    TOPIC_NAME
+            );
+        });
     }
 }

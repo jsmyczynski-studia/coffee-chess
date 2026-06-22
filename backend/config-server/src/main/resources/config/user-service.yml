@@ -17,7 +17,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   kafka:
-    bootstrap-servers: ${KAFKA_HOST:localhost}:9092
+    bootstrap-servers: ${KAFKA_HOST:kafka}:9092
     consumer:
       group-id: user-service-group
       auto-offset-reset: earliest
@@ -25,6 +25,8 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "pl.coffeechess.*"
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: pl.coffeechess.user.kafka.GameCompletedEvent
   security:
     oauth2:
       resourceserver:

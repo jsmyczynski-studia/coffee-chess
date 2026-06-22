@@ -12,6 +12,14 @@ import java.util.UUID;
 @Repository
 public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> {
 
-    @Query("SELECT g FROM GameHistory g WHERE g.whitePlayerId = :userId OR g.blackPlayerId = :userId ORDER BY g.playedAt DESC")
+    boolean existsByGameId(UUID gameId);
+
+    @Query("""
+            SELECT g
+            FROM GameHistory g
+            WHERE g.whitePlayerId = :userId
+               OR g.blackPlayerId = :userId
+            ORDER BY g.playedAt DESC
+            """)
     Page<GameHistory> findAllByPlayerId(UUID userId, Pageable pageable);
 }
