@@ -10,7 +10,7 @@ import { Input } from '../../components/ui/Input';
 import { ProtectedRoute } from '../../components/layout/ProtectedRoute';
 
 function FriendsContent() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [invites, setInvites] = useState<Friendship[]>([]);
   const [nickname, setNickname] = useState('');
@@ -62,24 +62,19 @@ function FriendsContent() {
 
   return (
     <div className="page-grid">
-      <Card title="Znajomi" subtitle="Wymaga JWT — Keycloak subject musi istnieć w tabeli users.">
+      <Card title="Znajomi" subtitle="Dodawaj graczy i zarządzaj zaproszeniami.">
         <form className="inline-form" onSubmit={handleInvite}>
           <Input
-            label="Nickname znajomego"
-            placeholder="min. 3 znaki"
+            label="Nazwa gracza"
+            placeholder="Wpisz nazwę gracza"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            minLength={3}
             maxLength={32}
           />
           <Button type="submit">Wyślij zaproszenie</Button>
         </form>
         {success && <Alert tone="success">{success}</Alert>}
         {error && <Alert tone="error">{error}</Alert>}
-        <Alert tone="warning" title="Backend">
-          Endpointy używają UUID z JWT (Keycloak). Użytkownik musi być zsynchronizowany z user-service —
-          inaczej zaproszenia zwrócą błąd.
-        </Alert>
       </Card>
 
       <Card title={`Zaproszenia (${invites.length})`}>
@@ -89,7 +84,7 @@ function FriendsContent() {
           <ul className="action-list">
             {invites.map((invite) => (
               <li key={invite.id}>
-                <span>Od gracza {invite.requesterId.slice(0, 8)}…</span>
+                <span>Od gracza {invite.requesterNickname}</span>
                 <Button variant="secondary" onClick={() => handleAccept(invite.id)}>
                   Akceptuj
                 </Button>
@@ -104,14 +99,14 @@ function FriendsContent() {
           <p className="muted">Brak zaakceptowanych znajomych.</p>
         ) : (
           <ul className="action-list">
-            {friends.map((f) => (
-              <li key={f.id}>
-                <span>
-                  {f.requesterId.slice(0, 8)}… ↔ {f.addresseeId.slice(0, 8)}…
-                </span>
-                <span className="status-pill">{f.status}</span>
-              </li>
-            ))}
+            {friends.map((f) => {
+              const friendName = f.requesterId === user?.id ? f.addresseeNickname : f.requesterNickname;
+              return (
+                <li key={f.id}>
+                  <span>{friendName}</span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </Card>

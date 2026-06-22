@@ -8,14 +8,14 @@ export function RankingPage() {
   const { data, error, loading } = useAsync(() => userApi.ranking(0, 50), []);
 
   return (
-    <Card title="Ranking ELO" subtitle="GET /api/ranking — endpoint publiczny (bez JWT).">
+    <Card title="Ranking ELO" subtitle="Najlepsi gracze według rankingu ELO.">
       {loading && <p className="muted">Ładowanie rankingu…</p>}
       {error && <Alert tone="error">{error}</Alert>}
 
       {!loading && !error && data && data.content.length === 0 && (
         <EmptyState
           title="Brak graczy"
-          description="Uruchom user-service i dodaj użytkowników w bazie PostgreSQL."
+          description="Nikt jeszcze nie rozegrał partii. Bądź pierwszy!"
         />
       )}
 

@@ -45,7 +45,11 @@ public class GameController {
                                               @AuthenticationPrincipal Jwt jwt) {
         UUID creatorId = subjectAsUuid(jwt);
         Game game = gameManagementService.createGame(request, creatorId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(GameDto.from(game));
+        // Jeśli bot gra białymi, musi wykonać pierwszy ruch od razu — inaczej czeka
+        // bez końca, bo człowiek (czarne) nie może ruszyć się pierwszy.
+        botMoveService.playBotTurnIfNeeded(game.getId());
+        Game latest = gameRepository.findById(game.getId()).orElse(game);
+        return ResponseEntity.status(HttpStatus.CREATED).body(GameDto.from(latest));
     }
 
     @GetMapping("/{id}")
@@ -80,10 +84,14 @@ public class GameController {
         if (request == null || request.move() == null || request.move().isBlank()) {
             throw new IllegalArgumentException("Invalid move format");
         }
-        GameUpdateDto result = gameEngineService.processMove(id, subjectAsUuid(jwt), request.move());
+        gameEngineService.processMove(id, subjectAsUuid(jwt), request.move());
         // po ruchu człowieka bot odpowiada automatycznie
         botMoveService.playBotTurnIfNeeded(id);
-        return result;
+        // Zwracamy najnowszy stan gry (po ewentualnym ruchu bota), aby klient nie musiał
+        // polegać wyłącznie na websocket — pojedyncze wywołanie HTTP daje pełny aktualny stan.
+        Game latest = gameRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Game doesn't exist"));
+        return GameUpdateDto.from(latest);
     }
 
     @GetMapping("/{id}/chat")

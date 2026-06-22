@@ -148,6 +148,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       KAFKA_HOST: kafka
       KEYCLOAK_HOST: keycloak
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-user-service-admin-secret}
     depends_on:
       config-server:
         condition: service_healthy

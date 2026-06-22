@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { ApiError } from '../../lib/api/http';
 import { userApi } from '../../lib/api/userApi';
-import type { GameHistoryEntry, UserProfile } from '../../lib/api/types';
+import { gameApi } from '../../lib/api/gameApi';
+import type { GameDto, UserProfile } from '../../lib/api/types';
 import { useAuth } from '../../lib/auth/AuthContext';
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
@@ -13,7 +14,7 @@ export function ProfilePage() {
   const { authenticated, user, token, login } = useAuth();
   const [nickname, setNickname] = useState('');
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [history, setHistory] = useState<GameHistoryEntry[]>([]);
+  const [history, setHistory] = useState<GameDto[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -30,10 +31,15 @@ export function ProfilePage() {
       const data = await userApi.profile(nickname.trim());
       setProfile(data);
 
+      // Pull the game list straight from game-service (same source the analysis page uses),
+      // so a player's games show up regardless of the completion-event pipeline.
       if (authenticated && token && user?.username === data.nickname) {
         try {
-          const hist = await userApi.gameHistory(data.id, 0, 10, token);
-          setHistory(hist.content);
+          const games = await gameApi.listGames(token);
+          const finished = games
+            .filter((g) => g.status !== 'IN_PROGRESS' && g.status !== 'WAITING_FOR_OPPONENT')
+            .sort((a, b) => new Date(b.endedAt || b.startedAt || 0).getTime() - new Date(a.endedAt || a.startedAt || 0).getTime());
+          setHistory(finished);
         } catch {
           setHistory([]);
         }
@@ -51,14 +57,14 @@ export function ProfilePage() {
 
   return (
     <div className="page-grid">
-      <Card title="Profil gracza" subtitle="GET /api/users/{nickname}/profile">
+      <Card title="Profil gracza" subtitle="Wyszukaj gracza po nazwie.">
         {!authenticated && (
           <Alert tone="info">
             Profil jest publiczny.{' '}
             <button type="button" className="link-btn" onClick={() => login()}>
               Zaloguj się
             </button>
-            , aby zobaczyć własną historię partii (wymaga JWT + UUID w bazie).
+            , aby zobaczyć własną historię partii.
           </Alert>
         )}
 
@@ -91,29 +97,40 @@ export function ProfilePage() {
             <StatCard label="Przegrane" value={profile.gamesLost} />
             <StatCard label="Remisy" value={profile.gamesDrawn} />
           </div>
+          <p className="muted small" style={{ marginTop: '-0.5rem' }}>
+            Statystyki z gier przeciwko innym graczom.
+          </p>
 
-          <Card title={profile.nickname} subtitle={`ID: ${profile.id}`}>
+          <Card title={profile.nickname}>
             <dl className="detail-list">
               <dt>Dołączył</dt>
               <dd>{new Date(profile.createdAt).toLocaleString('pl-PL')}</dd>
-              <dt>Avatar</dt>
-              <dd>{profile.avatarUrl ?? '—'}</dd>
             </dl>
           </Card>
 
           {authenticated && user?.username === profile.nickname && (
-            <Card title="Historia partii" subtitle="GET /api/users/{id}/history (JWT)">
+            <Card title="Historia partii">
               {history.length === 0 ? (
-                <p className="muted">Brak zapisanych partii lub brak uprawnień.</p>
+                <p className="muted">Brak rozegranych partii.</p>
               ) : (
                 <ul className="history-list">
-                  {history.map((entry) => (
-                    <li key={entry.id}>
-                      <span className="history-outcome">{entry.outcome}</span>
-                      <span>{new Date(entry.playedAt).toLocaleString('pl-PL')}</span>
-                      <span className="muted">game {entry.gameId.slice(0, 8)}…</span>
-                    </li>
-                  ))}
+                  {history.map((g) => {
+                    const isWhite = g.whitePlayerId === user?.id;
+                    let result = 'Remis';
+                    if (g.endReason === 'CHECKMATE' || g.endReason === 'RESIGNATION' || g.endReason === 'TIME_OUT') {
+                      // Winner is the side NOT to move at the end (the mated/flagged/resigned side is to move).
+                      const sideToMove = g.currentFen?.split(' ')[1] === 'w' ? 'WHITE' : 'BLACK';
+                      const iLost = (isWhite && sideToMove === 'WHITE') || (!isWhite && sideToMove === 'BLACK');
+                      result = iLost ? 'Przegrana' : 'Wygrana';
+                    }
+                    return (
+                      <li key={g.id}>
+                        <span className="history-outcome">{result}</span>
+                        <span>{g.vsBot ? 'Gra z komputerem' : 'vs gracz'} ({isWhite ? 'białe' : 'czarne'})</span>
+                        <span className="muted">{new Date(g.endedAt || g.startedAt || '').toLocaleString('pl-PL')}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </Card>

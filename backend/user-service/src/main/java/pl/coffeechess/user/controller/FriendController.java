@@ -7,7 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import pl.coffeechess.user.model.dto.FriendRequestDto;
-import pl.coffeechess.user.model.entity.Friendship;
+import pl.coffeechess.user.model.dto.FriendshipDto;
 import pl.coffeechess.user.service.FriendService;
 
 import java.util.List;
@@ -39,13 +39,13 @@ public class FriendController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Friendship>> getFriends(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<List<FriendshipDto>> getFriends(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         return ResponseEntity.ok(friendService.getFriends(userId));
     }
 
     @GetMapping("/invites/pending")
-    public ResponseEntity<List<Friendship>> getPendingInvites(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<List<FriendshipDto>> getPendingInvites(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         return ResponseEntity.ok(friendService.getPendingInvites(userId));
     }

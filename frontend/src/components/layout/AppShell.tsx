@@ -11,12 +11,11 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { to: '/', label: 'Start', end: true },
+  { to: '/', label: 'Gra', end: true },
   { to: '/ranking', label: 'Ranking' },
   { to: '/profile', label: 'Profil' },
   { to: '/friends', label: 'Znajomi', protected: true },
   { to: '/analysis', label: 'Analiza' },
-  { to: '/play', label: 'Gra' },
 ];
 
 export function AppShell() {
@@ -44,7 +43,6 @@ export function AppShell() {
               className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
             >
               {item.label}
-              {item.protected && <span className="nav-badge">JWT</span>}
             </NavLink>
           ))}
         </nav>
@@ -65,7 +63,7 @@ export function AppShell() {
             </>
           ) : (
             <Button variant="primary" onClick={() => login()}>
-              Zaloguj przez Keycloak
+              Zaloguj się
             </Button>
           )}
         </div>
@@ -74,14 +72,8 @@ export function AppShell() {
       <div className="content-area">
         <header className="topbar">
           <div>
-            <h2 className="topbar-title">Panel gracza</h2>
-            <p className="topbar-subtitle">User · Game · Analysis services</p>
-          </div>
-          <div className="service-pills">
-            <span className="pill">:8081 user</span>
-            <span className="pill">:8082 game</span>
-            <span className="pill">:8083 analysis</span>
-            <span className="pill">:8761 eureka</span>
+            <h2 className="topbar-title">{env.app.name}</h2>
+            <p className="topbar-subtitle">Graj w szachy online</p>
           </div>
         </header>
         <main className="page-content">

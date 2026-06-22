@@ -9,9 +9,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!authenticated) {
     return (
-      <Card title="Wymagane logowanie" subtitle="Ta sekcja korzysta z chronionych endpointów user-service.">
+      <Card title="Wymagane logowanie" subtitle="Zaloguj się, aby kontynuować.">
         <p className="muted">
-          Zaloguj się przez Keycloak, aby uzyskać token JWT wysyłany do backendu.
+          Zaloguj się, aby uzyskać dostęp do tej sekcji.
         </p>
         <Button onClick={() => login()}>Zaloguj się</Button>
         <p className="muted small" style={{ marginTop: '1rem' }}>

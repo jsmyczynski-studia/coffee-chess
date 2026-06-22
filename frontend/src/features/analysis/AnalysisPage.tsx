@@ -135,7 +135,7 @@ export function AnalysisPage() {
 
   return (
     <div className="page-grid">
-      <Card title="Wybierz partię do analizy" subtitle="GET /api/games — game-service">
+      <Card title="Wybierz partię do analizy" subtitle="Wybierz jedną ze swoich rozegranych partii.">
         {error && <div style={{ marginBottom: '1rem' }}><Alert tone="error">{error}</Alert></div>}
         <select 
           className="field-input" 
@@ -145,7 +145,7 @@ export function AnalysisPage() {
           <option value="">-- Wybierz swoją grę --</option>
           {games.map(g => {
             const isWhite = g.whitePlayerId === user?.id;
-            const vs = g.vsBot ? `Bot (${g.botDifficulty})` : (isWhite ? 'Czarnym graczem' : 'Białym graczem');
+            const vs = g.vsBot ? "komputerem" : (isWhite ? "Czarnym graczem" : "Białym graczem");
             return (
               <option key={g.id} value={g.id}>
                 {new Date(g.startedAt || '').toLocaleString()} - {isWhite ? 'Białe' : 'Czarne'} vs {vs} ({g.status})
@@ -159,7 +159,7 @@ export function AnalysisPage() {
         <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginTop: '1rem' }}>
           {/* Left column: Board & Eval */}
           <div style={{ flex: '1 1 400px', maxWidth: '500px' }}>
-            <Card title="Analiza pozycji" subtitle="GET /api/analysis/position — analysis-service">
+            <Card title="Analiza pozycji" subtitle="Szczegółowa analiza wybranej pozycji.">
               <div style={{ width: '100%' }}>
                 <Chessboard options={{ position: currentFen, animationDurationInMs: 150 }} />
               </div>
@@ -178,7 +178,7 @@ export function AnalysisPage() {
 
           {/* Right column: Move list & Engine lines */}
           <div style={{ flex: '1 1 300px' }}>
-            <Card title="Zapis partii" className="mb-4" subtitle="GET /api/games/{id}/moves">
+            <Card title="Zapis partii" className="mb-4" subtitle="Lista wykonanych ruchów.">
               <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '0.4rem', lineHeight: '2' }}>
                 {moves.length === 0 ? <p className="muted small">Brak ruchów (partia rozpoczęta lub zepsuta)</p> : null}
                 {moves.map((m, idx) => {
@@ -204,7 +204,7 @@ export function AnalysisPage() {
               </div>
             </Card>
 
-            <Card title="Linie silnika (Top 5)">
+            <Card title="Najlepszy ruch">
               {isAnalyzing && <p className="muted small">Analizowanie przez Stockfisha...</p>}
               {!analysis && !isAnalyzing && <p className="muted small">Oczekiwanie na silnik...</p>}
               {analysis && (
@@ -213,7 +213,6 @@ export function AnalysisPage() {
                     <tr style={{ borderBottom: '1px solid var(--border-soft)' }}>
                       <th style={{ padding: '0.5rem 0' }}>Ruch</th>
                       <th>Ocena</th>
-                      <th>Win %</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -223,7 +222,6 @@ export function AnalysisPage() {
                         <td style={{ color: c.mate !== null ? (c.mate > 0 ? '#4caf50' : '#f44336') : 'inherit' }}>
                           {c.mate !== null ? `M${c.mate}` : (c.eval !== null ? (c.eval > 0 ? `+${c.eval.toFixed(2)}` : c.eval.toFixed(2)) : '-')}
                         </td>
-                        <td>{c.winChance !== null ? `${(c.winChance * 100).toFixed(1)}%` : '-'}</td>
                       </tr>
                     ))}
                   </tbody>
