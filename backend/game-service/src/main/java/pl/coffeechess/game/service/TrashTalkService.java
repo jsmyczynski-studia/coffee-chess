@@ -10,15 +10,35 @@ import pl.coffeechess.game.client.LlmClient;
 public class TrashTalkService {
 
     private static final String SYSTEM_PROMPT = """
-            you are a cocky online chess player throwing trash talk at your opponent
-            reply with one short remark only
-            rules you must follow exactly:
-            all lowercase
-            no punctuation at all
-            no emojis
-            keep it under twelve words
-            informal and a bit mean
-            sound like a real online blitz player not a robot""";
+        jestes pewnym siebie botem szachowym zaczepiajacym przeciwnika
+        odpowiedz po polsku jednym bardzo krotkim komentarzem
+        komentuj tylko ruch bota ktory zostal podany w kontekscie
+        nie oceniaj ruchu przeciwnika jako dobrego lub slabego
+        nie zaprzeczaj analizie silnika
+        bez emoji
+        bez interpunkcji
+        maksymalnie dwanascie slow
+        ton lekko zaczepny ale nie obrazliwy
+        """; 
+
+    private static final String MOVE_COMMENT_PROMPT = """
+        jestes komentatorem partii szachowej grajacym jako bot
+        odpowiedz po polsku jednym bardzo krotkim zdaniem
+        komentujesz tylko ostatni ruch przeciwnika
+        klasyfikacja ruchu zostala podana przez silnik szachowy i jest prawdziwa
+        nie oceniaj innych ruchow i nie zaprzeczaj klasyfikacji
+        gdy ruch jest dobry pochwal go lekko zaczepnie
+        gdy ruch jest slaby zaczep przeciwnika rzeczowo
+        bez emoji
+        bez interpunkcji
+        maksymalnie dwanascie slow
+        """; 
+
+    private static final String CHAT_REPLY_PROMPT = """
+            jestes pewnym siebie botem szachowym rozmawiajacym z przeciwnikiem
+            odpowiedz po polsku bezposrednio na jego wiadomosc
+            odpowiedz ma byc lekko zaczepna ale nie obrazliwa
+            maksymalnie dwanascie slow""";
 
     private final LlmClient llmClient;
 
@@ -31,11 +51,26 @@ public class TrashTalkService {
         return sanitize(raw);
     }
 
+    public String generateMoveComment(String move, String quality) {
+      String raw = llmClient.complete(
+            MOVE_COMMENT_PROMPT,
+            "ostatni ruch przeciwnika to " + move
+                    + " klasyfikacja silnika to " + quality
+      );
+
+      return raw == null || raw.isBlank() ? null : sanitize(raw);
+    } 
+
+    public String generateChatReply(String playerMessage) {
+        String raw = llmClient.complete(CHAT_REPLY_PROMPT, playerMessage);
+        return raw == null || raw.isBlank() ? null : sanitize(raw);
+    }
+
     // wymusza wymagany styl: małe litery, bez interpunkcji i emoji, krótko
     private String sanitize(String text) {
         String cleaned = text.toLowerCase()
                 .replaceAll("[\\p{So}\\p{Cn}]", "")
-                .replaceAll("[^a-z0-9\\s]", "")
+                .replaceAll("[^\\p{L}\\p{N}\\s]", "")
                 .replaceAll("\\s+", " ")
                 .trim();
         if (cleaned.isBlank()) {

@@ -1,0 +1,204 @@
+cc-game-service  | 
+cc-game-service  |   .   ____          _            __ _ _
+cc-game-service  |  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+cc-game-service  | ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+cc-game-service  |  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+cc-game-service  |   '  |____| .__|_| |_|_| |_\__, | / / / /
+cc-game-service  |  =========|_|==============|___/=/_/_/_/
+cc-game-service  | 
+cc-game-service  |  :: Spring Boot ::                (v4.0.6)
+cc-game-service  | 
+cc-game-service  | 2026-06-22T11:43:18.321Z  INFO 1 --- [game-service] [           main] p.c.game.GameServiceApplication          : Starting GameServiceApplication using Java 25.0.3 with PID 1 (/app/app.jar started by appuser in /app)
+cc-game-service  | 2026-06-22T11:43:18.382Z  INFO 1 --- [game-service] [           main] p.c.game.GameServiceApplication          : No active profile set, falling back to 1 default profile: "default"
+cc-game-service  | 2026-06-22T11:43:18.805Z  INFO 1 --- [game-service] [           main] o.s.c.c.c.ConfigServerConfigDataLoader   : Fetching config from server at : http://config-server:8888
+cc-game-service  | 2026-06-22T11:43:18.806Z  INFO 1 --- [game-service] [           main] o.s.c.c.c.ConfigServerConfigDataLoader   : Located environment: name=game-service, profiles=[default], label=null, version=null, state=null
+cc-game-service  | 2026-06-22T11:43:23.866Z  INFO 1 --- [game-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+cc-game-service  | 2026-06-22T11:43:24.565Z  INFO 1 --- [game-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 655 ms. Found 3 JPA repository interfaces.
+cc-game-service  | 2026-06-22T11:43:27.257Z  INFO 1 --- [game-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=15245fe0-0086-3263-9d20-61efb1786a1a
+cc-game-service  | 2026-06-22T11:43:29.626Z  INFO 1 --- [game-service] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8082 (http)
+cc-game-service  | 2026-06-22T11:43:29.702Z  INFO 1 --- [game-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+cc-game-service  | 2026-06-22T11:43:29.703Z  INFO 1 --- [game-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.21]
+cc-game-service  | 2026-06-22T11:43:29.828Z  INFO 1 --- [game-service] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 11001 ms
+cc-game-service  | 2026-06-22T11:43:32.566Z  INFO 1 --- [game-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+cc-game-service  | 2026-06-22T11:43:33.663Z  INFO 1 --- [game-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@73852720
+cc-game-service  | 2026-06-22T11:43:33.666Z  INFO 1 --- [game-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+cc-game-service  | 2026-06-22T11:43:33.826Z  INFO 1 --- [game-service] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://postgres-game:5432/gamedb (PostgreSQL 16.14)
+cc-game-service  | 2026-06-22T11:43:34.314Z  INFO 1 --- [game-service] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 5 migrations (execution time 00:00.265s)
+cc-game-service  | 2026-06-22T11:43:34.387Z  INFO 1 --- [game-service] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 5
+cc-game-service  | 2026-06-22T11:43:34.418Z  INFO 1 --- [game-service] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+cc-game-service  | 2026-06-22T11:43:35.102Z  INFO 1 --- [game-service] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+cc-game-service  | 2026-06-22T11:43:35.364Z  INFO 1 --- [game-service] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.12.Final
+cc-game-service  | 2026-06-22T11:43:36.988Z  INFO 1 --- [game-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+cc-game-service  | 2026-06-22T11:43:37.207Z  WARN 1 --- [game-service] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+cc-game-service  | 2026-06-22T11:43:37.297Z  INFO 1 --- [game-service] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+cc-game-service  | 	Database JDBC URL [jdbc:postgresql://postgres-game:5432/gamedb]
+cc-game-service  | 	Database driver: PostgreSQL JDBC Driver
+cc-game-service  | 	Database dialect: PostgreSQLDialect
+cc-game-service  | 	Database version: 16.14
+cc-game-service  | 	Default catalog/schema: gamedb/public
+cc-game-service  | 	Autocommit mode: undefined/unknown
+cc-game-service  | 	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+cc-game-service  | 	JDBC fetch size: none
+cc-game-service  | 	Pool: DataSourceConnectionProvider
+cc-game-service  | 	Minimum pool size: undefined/unknown
+cc-game-service  | 	Maximum pool size: undefined/unknown
+cc-game-service  | 2026-06-22T11:43:39.276Z  INFO 1 --- [game-service] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+cc-game-service  | 2026-06-22T11:43:39.379Z  INFO 1 --- [game-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+cc-game-service  | 2026-06-22T11:43:39.632Z  INFO 1 --- [game-service] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+cc-game-service  | 2026-06-22T11:43:41.051Z  WARN 1 --- [game-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+cc-game-service  | 2026-06-22T11:43:44.441Z  INFO 1 --- [game-service] [           main] DiscoveryClientOptionalArgsConfiguration : Eureka HTTP Client uses RestClient.
+cc-game-service  | 2026-06-22T11:43:44.571Z  WARN 1 --- [game-service] [           main] iguration$LoadBalancerCaffeineWarnLogger : Spring Cloud LoadBalancer is currently working with the default cache. While this cache implementation is useful for development and tests, it's recommended to use Caffeine cache in production.You can switch to using Caffeine cache, by adding it and org.springframework.cache.caffeine.CaffeineCacheManager to the classpath.
+cc-game-service  | 2026-06-22T11:43:44.605Z  INFO 1 --- [game-service] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+cc-game-service  | 2026-06-22T11:43:44.800Z  INFO 1 --- [game-service] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+cc-game-service  | 2026-06-22T11:43:44.801Z  INFO 1 --- [game-service] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@1f1d3207]]
+cc-game-service  | 2026-06-22T11:43:44.805Z  INFO 1 --- [game-service] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+cc-game-service  | 2026-06-22T11:43:44.832Z  INFO 1 --- [game-service] [           main] o.s.c.n.eureka.InstanceInfoFactory       : Setting initial instance status as: STARTING
+cc-game-service  | 2026-06-22T11:43:44.944Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Initializing Eureka in region us-east-1
+cc-game-service  | 2026-06-22T11:43:44.957Z  INFO 1 --- [game-service] [           main] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+cc-game-service  | 2026-06-22T11:43:44.984Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Disable delta property : false
+cc-game-service  | 2026-06-22T11:43:44.985Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Single vip registry refresh property : null
+cc-game-service  | 2026-06-22T11:43:44.985Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Force full registry fetch : false
+cc-game-service  | 2026-06-22T11:43:44.985Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Application is null : false
+cc-game-service  | 2026-06-22T11:43:44.985Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Registered Applications size is zero : true
+cc-game-service  | 2026-06-22T11:43:44.985Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Application version is -1: true
+cc-game-service  | 2026-06-22T11:43:44.985Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Getting all instance registry info from the eureka server
+cc-game-service  | 2026-06-22T11:43:46.058Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : The response status is 200
+cc-game-service  | 2026-06-22T11:43:46.062Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Starting heartbeat executor: renew interval is: 10
+cc-game-service  | 2026-06-22T11:43:46.067Z  INFO 1 --- [game-service] [           main] c.n.discovery.InstanceInfoReplicator     : InstanceInfoReplicator onDemand update allowed rate per min is 4
+cc-game-service  | 2026-06-22T11:43:46.069Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Discovery Client initialized at timestamp 1782128626069 with initial instances count: 2
+cc-game-service  | 2026-06-22T11:43:46.079Z  INFO 1 --- [game-service] [           main] o.s.c.n.e.s.EurekaServiceRegistry        : Registering application GAME-SERVICE with eureka with status UP
+cc-game-service  | 2026-06-22T11:43:46.080Z  INFO 1 --- [game-service] [           main] com.netflix.discovery.DiscoveryClient    : Saw local status change event StatusChangeEvent [timestamp=1782128626080, current=UP, previous=STARTING]
+cc-game-service  | 2026-06-22T11:43:46.087Z  INFO 1 --- [game-service] [foReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_GAME-SERVICE/568512a31501:game-service:8082: registering service...
+cc-game-service  | 2026-06-22T11:43:46.128Z  INFO 1 --- [game-service] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8082 (http) with context path '/'
+cc-game-service  | 2026-06-22T11:43:46.130Z  INFO 1 --- [game-service] [           main] .s.c.n.e.s.EurekaAutoServiceRegistration : Updating port to 8082
+cc-game-service  | 2026-06-22T11:43:46.170Z  INFO 1 --- [game-service] [           main] p.c.game.GameServiceApplication          : Started GameServiceApplication in 32.702 seconds (process running for 35.45)
+cc-game-service  | 2026-06-22T11:43:46.325Z  INFO 1 --- [game-service] [foReplicator-%d] com.netflix.discovery.DiscoveryClient    : DiscoveryClient_GAME-SERVICE/568512a31501:game-service:8082 - registration status: 204
+cc-game-service  | 2026-06-22T11:43:47.156Z  INFO 1 --- [game-service] [nio-8082-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+cc-game-service  | 2026-06-22T11:43:47.156Z  INFO 1 --- [game-service] [nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+cc-game-service  | 2026-06-22T11:43:47.161Z  INFO 1 --- [game-service] [nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+cc-game-service  | 2026-06-22T11:43:54.815Z  INFO 1 --- [game-service] [MessageBroker-6] o.a.kafka.common.config.AbstractConfig   : ProducerConfig values: 
+cc-game-service  | 	acks = -1
+cc-game-service  | 	batch.size = 16384
+cc-game-service  | 	bootstrap.servers = [kafka:9092]
+cc-game-service  | 	buffer.memory = 33554432
+cc-game-service  | 	client.dns.lookup = use_all_dns_ips
+cc-game-service  | 	client.id = game-service-producer-1
+cc-game-service  | 	compression.gzip.level = -1
+cc-game-service  | 	compression.lz4.level = 9
+cc-game-service  | 	compression.type = none
+cc-game-service  | 	compression.zstd.level = 3
+cc-game-service  | 	connections.max.idle.ms = 540000
+cc-game-service  | 	delivery.timeout.ms = 120000
+cc-game-service  | 	enable.idempotence = true
+cc-game-service  | 	enable.metrics.push = true
+cc-game-service  | 	interceptor.classes = []
+cc-game-service  | 	key.serializer = class org.apache.kafka.common.serialization.StringSerializer
+cc-game-service  | 	linger.ms = 5
+cc-game-service  | 	max.block.ms = 60000
+cc-game-service  | 	max.in.flight.requests.per.connection = 5
+cc-game-service  | 	max.request.size = 1048576
+cc-game-service  | 	metadata.max.age.ms = 300000
+cc-game-service  | 	metadata.max.idle.ms = 300000
+cc-game-service  | 	metadata.recovery.rebootstrap.trigger.ms = 300000
+cc-game-service  | 	metadata.recovery.strategy = rebootstrap
+cc-game-service  | 	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+cc-game-service  | 	metrics.num.samples = 2
+cc-game-service  | 	metrics.recording.level = INFO
+cc-game-service  | 	metrics.sample.window.ms = 30000
+cc-game-service  | 	partitioner.adaptive.partitioning.enable = true
+cc-game-service  | 	partitioner.availability.timeout.ms = 0
+cc-game-service  | 	partitioner.class = null
+cc-game-service  | 	partitioner.ignore.keys = false
+cc-game-service  | 	receive.buffer.bytes = 32768
+cc-game-service  | 	reconnect.backoff.max.ms = 1000
+cc-game-service  | 	reconnect.backoff.ms = 50
+cc-game-service  | 	request.timeout.ms = 30000
+cc-game-service  | 	retries = 2147483647
+cc-game-service  | 	retry.backoff.max.ms = 1000
+cc-game-service  | 	retry.backoff.ms = 100
+cc-game-service  | 	sasl.client.callback.handler.class = null
+cc-game-service  | 	sasl.jaas.config = null
+cc-game-service  | 	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+cc-game-service  | 	sasl.kerberos.min.time.before.relogin = 60000
+cc-game-service  | 	sasl.kerberos.service.name = null
+cc-game-service  | 	sasl.kerberos.ticket.renew.jitter = 0.05
+cc-game-service  | 	sasl.kerberos.ticket.renew.window.factor = 0.8
+cc-game-service  | 	sasl.login.callback.handler.class = null
+cc-game-service  | 	sasl.login.class = null
+cc-game-service  | 	sasl.login.connect.timeout.ms = null
+cc-game-service  | 	sasl.login.read.timeout.ms = null
+cc-game-service  | 	sasl.login.refresh.buffer.seconds = 300
+cc-game-service  | 	sasl.login.refresh.min.period.seconds = 60
+cc-game-service  | 	sasl.login.refresh.window.factor = 0.8
+cc-game-service  | 	sasl.login.refresh.window.jitter = 0.05
+cc-game-service  | 	sasl.login.retry.backoff.max.ms = 10000
+cc-game-service  | 	sasl.login.retry.backoff.ms = 100
+cc-game-service  | 	sasl.mechanism = GSSAPI
+cc-game-service  | 	sasl.oauthbearer.assertion.algorithm = RS256
+cc-game-service  | 	sasl.oauthbearer.assertion.claim.aud = null
+cc-game-service  | 	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+cc-game-service  | 	sasl.oauthbearer.assertion.claim.iss = null
+cc-game-service  | 	sasl.oauthbearer.assertion.claim.jti.include = false
+cc-game-service  | 	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+cc-game-service  | 	sasl.oauthbearer.assertion.claim.sub = null
+cc-game-service  | 	sasl.oauthbearer.assertion.file = null
+cc-game-service  | 	sasl.oauthbearer.assertion.private.key.file = null
+cc-game-service  | 	sasl.oauthbearer.assertion.private.key.passphrase = null
+cc-game-service  | 	sasl.oauthbearer.assertion.template.file = null
+cc-game-service  | 	sasl.oauthbearer.client.credentials.client.id = null
+cc-game-service  | 	sasl.oauthbearer.client.credentials.client.secret = null
+cc-game-service  | 	sasl.oauthbearer.clock.skew.seconds = 30
+cc-game-service  | 	sasl.oauthbearer.expected.audience = null
+cc-game-service  | 	sasl.oauthbearer.expected.issuer = null
+cc-game-service  | 	sasl.oauthbearer.header.urlencode = false
+cc-game-service  | 	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+cc-game-service  | 	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+cc-game-service  | 	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+cc-game-service  | 	sasl.oauthbearer.jwks.endpoint.url = null
+cc-game-service  | 	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+cc-game-service  | 	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+cc-game-service  | 	sasl.oauthbearer.scope = null
+cc-game-service  | 	sasl.oauthbearer.scope.claim.name = scope
+cc-game-service  | 	sasl.oauthbearer.sub.claim.name = sub
+cc-game-service  | 	sasl.oauthbearer.token.endpoint.url = null
+cc-game-service  | 	security.protocol = PLAINTEXT
+cc-game-service  | 	security.providers = null
+cc-game-service  | 	send.buffer.bytes = 131072
+cc-game-service  | 	socket.connection.setup.timeout.max.ms = 30000
+cc-game-service  | 	socket.connection.setup.timeout.ms = 10000
+cc-game-service  | 	ssl.cipher.suites = null
+cc-game-service  | 	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+cc-game-service  | 	ssl.endpoint.identification.algorithm = https
+cc-game-service  | 	ssl.engine.factory.class = null
+cc-game-service  | 	ssl.key.password = null
+cc-game-service  | 	ssl.keymanager.algorithm = SunX509
+cc-game-service  | 	ssl.keystore.certificate.chain = null
+cc-game-service  | 	ssl.keystore.key = null
+cc-game-service  | 	ssl.keystore.location = null
+cc-game-service  | 	ssl.keystore.password = null
+cc-game-service  | 	ssl.keystore.type = JKS
+cc-game-service  | 	ssl.protocol = TLSv1.3
+cc-game-service  | 	ssl.provider = null
+cc-game-service  | 	ssl.secure.random.implementation = null
+cc-game-service  | 	ssl.trustmanager.algorithm = PKIX
+cc-game-service  | 	ssl.truststore.certificates = null
+cc-game-service  | 	ssl.truststore.location = null
+cc-game-service  | 	ssl.truststore.password = null
+cc-game-service  | 	ssl.truststore.type = JKS
+cc-game-service  | 	transaction.timeout.ms = 60000
+cc-game-service  | 	transaction.two.phase.commit.enable = false
+cc-game-service  | 	transactional.id = null
+cc-game-service  | 	value.serializer = class org.springframework.kafka.support.serializer.JsonSerializer
+cc-game-service  | 
+cc-game-service  | 2026-06-22T11:43:54.862Z  INFO 1 --- [game-service] [MessageBroker-6] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+cc-game-service  | 2026-06-22T11:43:54.892Z  INFO 1 --- [game-service] [MessageBroker-6] o.a.k.clients.producer.KafkaProducer     : [Producer clientId=game-service-producer-1] Instantiated an idempotent producer.
+cc-game-service  | 2026-06-22T11:43:54.946Z  INFO 1 --- [game-service] [MessageBroker-6] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+cc-game-service  | 2026-06-22T11:43:54.946Z  INFO 1 --- [game-service] [MessageBroker-6] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+cc-game-service  | 2026-06-22T11:43:54.946Z  INFO 1 --- [game-service] [MessageBroker-6] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1782128634945
+cc-game-service  | 2026-06-22T11:43:55.445Z  WARN 1 --- [game-service] [vice-producer-1] org.apache.kafka.clients.NetworkClient   : [Producer clientId=game-service-producer-1] The metadata response from the cluster reported a recoverable issue with correlation id 1 : {game-completed=UNKNOWN_TOPIC_OR_PARTITION}
+cc-game-service  | 2026-06-22T11:43:55.447Z  INFO 1 --- [game-service] [vice-producer-1] org.apache.kafka.clients.Metadata        : [Producer clientId=game-service-producer-1] Cluster ID: 5L6g3nShT-eMCtK--X86sw
+cc-game-service  | 2026-06-22T11:43:55.560Z  INFO 1 --- [game-service] [vice-producer-1] o.a.k.c.p.internals.TransactionManager   : [Producer clientId=game-service-producer-1] ProducerId set to 0 with epoch 0
+cc-game-service  | 2026-06-22T11:44:28.762Z ERROR 1 --- [game-service] [  bot-comment-1] p.coffeechess.game.client.EngineClient   : engine analysis error for fen=rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1: Error while extracting response for type [pl.coffeechess.game.client.EngineClient$EngineResponse] and content type [application/octet-stream]
+cc-game-service  | 2026-06-22T11:44:33.154Z ERROR 1 --- [game-service] [nio-8082-exec-6] p.coffeechess.game.client.EngineClient   : engine analysis error for fen=rnbqkb1r/pppppppp/5n2/8/5P2/5N2/PPPPP1PP/RNBQKB1R b KQkq - 0 1: Error while extracting response for type [pl.coffeechess.game.client.EngineClient$EngineResponse] and content type [application/octet-stream]
+cc-game-service  | 2026-06-22T11:44:33.154Z  WARN 1 --- [game-service] [nio-8082-exec-6] p.c.game.service.BotMoveService          : engine returned no move for game 2e376adb-9d9f-4a2b-98d4-601bf0eeaf4e
+cc-game-service  | 2026-06-22T11:44:44.674Z  INFO 1 --- [game-service] [MessageBroker-1] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[1 current WS(1)-HttpStream(0)-HttpPoll(0), 2 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(2)-CONNECTED(2)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 16, active threads = 0, queued tasks = 0, completed tasks = 21], outboundChannel[pool size = 10, active threads = 0, queued tasks = 0, completed tasks = 10], sockJsScheduler[pool size = 8, active threads = 1, queued tasks = 1, completed tasks = 56]

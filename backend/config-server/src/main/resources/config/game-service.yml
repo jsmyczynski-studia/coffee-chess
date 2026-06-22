@@ -35,9 +35,9 @@ chess:
     timeout-seconds: 10
 
 llm:
-  base-url: ${LLM_BASE_URL:https://api.openai.com/v1}
+  base-url: ${LLM_BASE_URL:https://api.groq.com/openai/v1}
   api-key: ${LLM_API_KEY:}
-  model: ${LLM_MODEL:gpt-4o-mini}
+  model: ${LLM_MODEL:openai/gpt-oss-20b}
   max-tokens: 40
   timeout-seconds: 8
 

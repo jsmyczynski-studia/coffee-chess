@@ -29,7 +29,7 @@ public class EngineClientConfig {
                 .build();
     }
 
-    @Value("${llm.base-url:https://api.openai.com/v1}")
+    @Value("${llm.base-url:https://api.groq.com/openai/v1}")
     private String llmBaseUrl;
 
     @Value("${llm.timeout-seconds:8}")

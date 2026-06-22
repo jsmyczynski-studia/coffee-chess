@@ -1,6 +1,5 @@
 package pl.coffeechess.game.client;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,7 +11,6 @@ import org.springframework.web.client.RestClient;
 import java.util.List;
 import java.util.Map;
 
-// klient LLM - dostawca i model konfigurowalne przez config-server
 @Slf4j
 @Component
 public class LlmClient {
@@ -22,7 +20,7 @@ public class LlmClient {
     @Value("${llm.api-key:}")
     private String apiKey;
 
-    @Value("${llm.model:gpt-4o-mini}")
+    @Value("${llm.model:openai/gpt-oss-20b}")
     private String model;
 
     @Value("${llm.max-tokens:40}")
@@ -32,33 +30,83 @@ public class LlmClient {
         this.llmRestClient = llmRestClient;
     }
 
-    // zwraca odpowiedź modelu lub null gdy wywołanie zawiedzie
+    /**
+     * Zwraca tekst odpowiedzi modelu albo null, gdy request się nie powiedzie.
+     */
     public String complete(String systemPrompt, String userPrompt) {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.warn("LLM call skipped because llm.api-key is not configured");
+            return null;
+        }
+
         try {
             Map<String, Object> body = Map.of(
                     "model", model,
                     "max_tokens", maxTokens,
                     "temperature", 0.9,
                     "messages", List.of(
-                            Map.of("role", "system", "content", systemPrompt),
-                            Map.of("role", "user", "content", userPrompt)
+                            Map.of(
+                                    "role", "system",
+                                    "content", systemPrompt
+                            ),
+                            Map.of(
+                                    "role", "user",
+                                    "content", userPrompt
+                            )
                     )
             );
-            JsonNode response = llmRestClient.post()
+
+            GroqChatResponse response = llmRestClient.post()
                     .uri("/chat/completions")
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
                     .body(body)
                     .retrieve()
-                    .body(JsonNode.class);
-            if (response == null) {
+                    .body(GroqChatResponse.class);
+
+            if (response == null
+                    || response.choices() == null
+                    || response.choices().isEmpty()) {
+                log.warn("LLM returned an empty response for model {}", model);
                 return null;
             }
-            JsonNode content = response.path("choices").path(0).path("message").path("content");
-            return content.isMissingNode() ? null : content.asText();
+
+            Choice firstChoice = response.choices().getFirst();
+
+            if (firstChoice == null
+                    || firstChoice.message() == null
+                    || firstChoice.message().content() == null
+                    || firstChoice.message().content().isBlank()) {
+                log.warn("LLM response did not contain message content for model {}", model);
+                return null;
+            }
+
+            return firstChoice.message().content().trim();
+
         } catch (Exception e) {
-            log.error("llm call error: {}", e.getMessage());
+            log.error("LLM call failed for model {}", model, e);
             return null;
         }
+    }
+
+    /**
+     * Minimalny model odpowiedzi OpenAI-compatible / Groq API.
+     * Pozostałe pola z odpowiedzi są ignorowane.
+     */
+    public record GroqChatResponse(
+            List<Choice> choices
+    ) {
+    }
+
+    public record Choice(
+            Message message
+    ) {
+    }
+
+    public record Message(
+            String role,
+            String content
+    ) {
     }
 }
